@@ -1,0 +1,55 @@
+<PAMDataset>
+  <Metadata>
+    <MDI key="ACCODE">LaSRCL8V3.5.5</MDI>
+    <MDI key="add_offset">0.0</MDI>
+    <MDI key="arop_ave_xshift(meters)">-14.5999999999767</MDI>
+    <MDI key="arop_ave_yshift(meters)">5.80000000004657</MDI>
+    <MDI key="arop_ncp">3714</MDI>
+    <MDI key="arop_rmse(meters)">3.75</MDI>
+    <MDI key="arop_s2_refimg">/nobackupp6/jju/S2REFIMG/21LYH.2017.3.8.0.S2A_B08.jp2</MDI>
+    <MDI key="cloud_coverage">11</MDI>
+    <MDI key="DATA_TYPE">L1TP</MDI>
+    <MDI key="HLS_PROCESSING_TIME">2018-10-06T00:09:13Z</MDI>
+    <MDI key="HORIZONTAL_CS_NAME">UTM, WGS84, UTM ZONE 21</MDI>
+    <MDI key="L1_PROCESSING_TIME">2018-02-06T05:54:30Z</MDI>
+    <MDI key="LANDSAT_PRODUCT_ID">LC08_L1TP_226068_20180119_20180206_01_T1</MDI>
+    <MDI key="LANDSAT_SCENE_ID">LC82260682018019LGN00</MDI>
+    <MDI key="long_name">Red</MDI>
+    <MDI key="MEAN_SUN_AZIMUTH_ANGLE">110.14239362</MDI>
+    <MDI key="MEAN_SUN_ZENITH_ANGLE">31.23422458</MDI>
+    <MDI key="NBAR_Solar_Zenith">33.9273104306198</MDI>
+    <MDI key="NCOLS">3660</MDI>
+    <MDI key="NROWS">3660</MDI>
+    <MDI key="scale_factor">0.0001</MDI>
+    <MDI key="SENSING_TIME">2018-01-19T13:44:26.5159950Z</MDI>
+    <MDI key="SENSOR">OLI_TIRS</MDI>
+    <MDI key="SENTINEL2_TILEID">21LYH</MDI>
+    <MDI key="spatial_coverage">100</MDI>
+    <MDI key="SPATIAL_RESOLUTION">30</MDI>
+    <MDI key="TIRS_SSM_MODEL">FINAL</MDI>
+    <MDI key="TIRS_SSM_POSITION_STATUS">ESTIMATED</MDI>
+    <MDI key="ULX">699960</MDI>
+    <MDI key="ULY">-1200000</MDI>
+    <MDI key="USGS_SOFTWARE">LPGS_13.0.0</MDI>
+    <MDI key="_FillValue">-1000</MDI>
+  </Metadata>
+  <PAMRasterBand band="1">
+    <Histograms>
+      <HistItem>
+        <HistMin>0.625</HistMin>
+        <HistMax>4.375</HistMax>
+        <BucketCount>4</BucketCount>
+        <IncludeOutOfRange>0</IncludeOutOfRange>
+        <Approximate>0</Approximate>
+        <HistCounts>1735906|2695424|7715481|1248789</HistCounts>
+      </HistItem>
+    </Histograms>
+    <Metadata>
+      <MDI key="STATISTICS_MAXIMUM">4</MDI>
+      <MDI key="STATISTICS_MEAN">2.6328311535136</MDI>
+      <MDI key="STATISTICS_MINIMUM">1</MDI>
+      <MDI key="STATISTICS_STDDEV">0.82339484717875</MDI>
+      <MDI key="STATISTICS_VALID_PERCENT">100</MDI>
+    </Metadata>
+  </PAMRasterBand>
+</PAMDataset>

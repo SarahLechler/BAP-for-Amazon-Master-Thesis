@@ -1,9 +1,10 @@
 /hls_data
 /evaluation/21*
 /evaluation/prodes_data
-/Random Forest/Classification
-/Random Forest/trainingData
-/Random Forest/training*
+/RandomForst/Classification
+/RandomForst/trainingData
+/RandomForst/training*
+/RandomForst
 Images2018*
 /__pycache__
 ./xxx_uncontrolled_hls

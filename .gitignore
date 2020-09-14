@@ -1,4 +1,4 @@
-/Images 
+/hls_data
 /evaluation/21*
 /evaluation/prodes_data
 /Random Forest/Classification
@@ -6,3 +6,8 @@
 /Random Forest/training*
 Images2018*
 /__pycache__
+./xxx_uncontrolled_hls
+./
+/hls_downloads
+.idea
+.idea/*

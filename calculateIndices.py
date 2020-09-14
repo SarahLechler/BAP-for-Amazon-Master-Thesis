@@ -1,6 +1,7 @@
 from osgeo import gdal_array
-import gdal
+from osgeo import gdal
 import numpy as np
+import os
 
 
 def applyCloudMask(ndvi, index_array):
@@ -143,7 +144,7 @@ def calculate_indices(bands):
             ca_band = gdal.Open(band)
             ca_band = ca_band.ReadAsArray()
 
-    print(f'finihed calculating indices for {bands[0]}')
+    print(f'finished calculating indices for {bands[0]}')
     # calculate indices
     ndvi = calculate_ndvi(nir_band, red_band)
     evi = calculate_evi(nir_band, red_band, blue_band)
@@ -162,3 +163,14 @@ def calculate_indices(bands):
     save_ind_img(bands[0][:-17], evi, "EVI", bands[3])
     save_ind_img(bands[0][:-17], gemi, "GEMI", bands[3])
     save_ind_img(bands[0][:-17], savi, "SAVI", bands[3])
+
+def index_creation(path):
+    if not path:
+        return
+    folder_path = path[:-3]
+    bands_list = os.listdir(folder_path)
+    band_paths = []
+    for band in bands_list:
+        band_path = os.path.join(folder_path, band)
+        band_paths.append(band_path)
+    calculate_indices(band_paths)

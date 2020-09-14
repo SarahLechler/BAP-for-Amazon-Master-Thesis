@@ -1,4 +1,4 @@
-import gdal
+from osgeo import gdal
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -38,7 +38,7 @@ def plotSampleData(X, year, index, y):
         plt.title(f"TS for year: {year} and index {index}")
         plt.ylabel(f'{index} value')
         plt.xlabel('Month of Prodes Year')
-        plt.savefig(f'../Images/plots/ts{year}{index}_lineplot_randomsample_withNAN')
+        plt.savefig(f'../hls_data/plots/ts{year}{index}_lineplot_randomsample_withNAN')
 
 
 def createData(ts, path, index, year):

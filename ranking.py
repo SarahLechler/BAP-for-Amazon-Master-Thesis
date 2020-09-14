@@ -1,7 +1,7 @@
-import gdal
+from osgeo import gdal
 import os
 
-directoryPath = "./Images"
+directoryPath = "../../../../scratch/tmp/s_lech05/hls_data/"
 
 
 def create_list_of_files():
@@ -20,7 +20,35 @@ def create_list_of_files():
                                 if file.endswith('.hdf'):
                                     filePath = os.path.join(dirPath, file)
                                     filePathArray.append(filePath)
+        elif os.path.isdir(tilePath) and (item == "2019"):
+            yearPath = tilePath
+            if os.path.isdir(yearPath):
+                for hlsDirectory in os.listdir(yearPath):
+                    dirPath = os.path.join(yearPath, hlsDirectory)
+                    if os.path.isdir(dirPath):
+                        for file in os.listdir(dirPath):
+                            if file.endswith('.hdf'):
+                                filePath = os.path.join(dirPath, file)
+                                filePathArray.append(filePath)
     return filePathArray
+
+def create_list_of_fileshdf5():
+    filePathArray = []
+    for item in os.listdir(directoryPath):
+        tilePath = os.path.join(directoryPath, item)
+        if os.path.isdir(tilePath) and (item == "21LYG" or item == "21LYH"):
+            for year in os.listdir(tilePath):
+                yearPath = os.path.join(tilePath, year)
+                if os.path.isdir(yearPath):
+                    for hlsDirectory in os.listdir(yearPath):
+                        dirPath = os.path.join(yearPath, hlsDirectory)
+                        if os.path.isdir(dirPath):
+                            for file in os.listdir(dirPath):
+                                if file.endswith('.h5'):
+                                    filePath = os.path.join(dirPath, file)
+                                    filePathArray.append(filePath)
+    return filePathArray
+
 
 
 def extract_cloud_coverage(metadata):
@@ -35,20 +63,6 @@ def extract_spatial_coverage(metadata):
     if cc_index != -1:
         spatial_coverage = metadata[cc_index + 17:cc_index + 21]
         return int(spatial_coverage)
-
-
-def extract_sensing_month(metadata):
-    st_index = metadata.find("SENSING_TIME")
-    if st_index != -1:
-        month = metadata[st_index + 18:st_index + 20]
-        return int(month)
-
-
-def extract_sensing_year(metadata):
-    st_index = metadata.find("SENSING_TIME")
-    if st_index != -1:
-        year = metadata[st_index + 13:st_index + 17]
-        return year
 
 
 def group_images_per_month(file_path_array):

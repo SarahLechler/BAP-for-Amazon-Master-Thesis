@@ -6,6 +6,20 @@ This code aims to pre-process hls-datasets (specifically the tiles 21LYH anf 21L
 
 from osgeo import gdal_array
 import multiprocessing as mp
+# hls download test
+# from bs4 import BeautifulSoup
+import collections
+import datetime
+import fnmatch
+import numpy as np
+import pandas as pd
+from pathlib import Path
+import rasterio
+import requests
+from subprocess import Popen, PIPE
+# from tqdm import tqdm
+import urllib
+import warnings
 
 import hlsCloudMask
 import createGeoTiffFromHLS
@@ -14,6 +28,7 @@ import calculateIndices
 import ranking
 import create_time_series
 import runBFAST
+import convertToHDF5
 
 
 def save_results_to_tif(bfast_array, method, name):
@@ -39,28 +54,26 @@ def runCalcs(calc_array):
     save_results_to_tif(results[1], "_mean_2018,", name + tile)
 
 
-def createAllImages(month):
-    ranking_result = ranking.create_cloud_ranking(month)
-    best_img_path = ranking_result
-    """hlsCloudMask.create_cloudmask(best_img_path)
-    createGeoTiffFromHLS.create_multiband_geotif(best_img_path)"""
-    clear_sky_paths = createClearSkyImg.create_clear_sky_image(best_img_path)
-    calculateIndices.calculate_indices(clear_sky_paths)
+def createAllImages(path):
+    hlsCloudMask.create_cloudmask(path)
+    createGeoTiffFromHLS.create_multiband_geotif(path)
+    clear_sky_path = createClearSkyImg.create_clear_sky_image(path)
+    calculateIndices.calculate_indices(clear_sky_path)
+
+
 
 
 if __name__ == '__main__':
-    """grouped_images = ranking.group_images_per_month(ranking.create_list_of_files())
-    best_images = []
-    # STEP 1: create images in parallel
-    for month in grouped_images:
-        print("starting Image Pool")
-        pool = mp.Pool(2)
-        result = pool.map(createAllImages, month)
-        pool.close()
-        pool.join()
-    """
+    img_paths = ranking.create_list_of_fileshdf5()
+    # STEP 1: create images and cloudmask, mask out cloud and calculate indices in parallel
+    print("starting Image Pool")
+    pool = mp.Pool(2)
+    result = pool.map(createAllImages, img_paths)
+    pool.close()
+    pool.join()
+
     # STEP 2: run BFAST algorithm in parallel
-    print("starting bfast Pool")
+    """print("starting bfast Pool")
     img_array = [["EVI", "21LYH"], ["EVI", "21LYG"],
                  ["SAVI", "21LYH"], ["SAVI", "21LYG"]]
     [["GEMI", "21LYH"],
@@ -70,5 +83,4 @@ if __name__ == '__main__':
     result = pool.imap(runCalcs, img_array)
 
     pool.close()
-    pool.join()
-
+    pool.join()"""

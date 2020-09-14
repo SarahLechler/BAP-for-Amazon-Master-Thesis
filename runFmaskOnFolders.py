@@ -3,7 +3,7 @@ import subprocess
 import zipfile
 import multiprocessing as mp
 
-path = "/home/Usuario/Documents/sentinelHub"
+path = "./hls_downloads"
 
 dirList = os.listdir(path)
 """for folder in dirList:

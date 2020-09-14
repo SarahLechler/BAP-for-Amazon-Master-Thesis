@@ -1,6 +1,6 @@
 import numpy as np
 import os
-import gdal
+from osgeo import gdal
 import datetime
 
 directoryPath = "./Images"

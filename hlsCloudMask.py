@@ -1,16 +1,19 @@
-import gdal
+from osgeo import gdal
 import matplotlib.pyplot as plt
 from osgeo import gdal_array
 import numpy as np
 
 
-def retrieve_cloud_mask_from_QA(hdf_file):
-    hdf_dataset = gdal.Open(hdf_file)
-    if hdf_file.find("L30") != -1:
-        qa_layer_path = hdf_dataset.GetSubDatasets()[10][0]
-        print(qa_layer_path)
+def retrieve_cloud_mask_from_QA(hf_file):
+    hf_dataset = gdal.Open(hf_file)
+    if not hf_dataset:
+        return
+    if hf_file.find("L30") != -1:
+        qa_layer_path = hf_dataset.GetSubDatasets()[10][0]
+        print("qa path: " + qa_layer_path)
     else:
-        qa_layer_path = hdf_dataset.GetSubDatasets()[13][0]
+        qa_layer_path = hf_dataset.GetSubDatasets()[13][0]
+        print("qa path: " + qa_layer_path)
     qa_layer = gdal.Open(qa_layer_path)
     qa_array = qa_layer.ReadAsArray()
     valid_pixel = [0, 4, 16, 20, 32, 36, 48, 52, 64, 68, 80, 84, 96,
@@ -27,7 +30,7 @@ def retrieve_cloud_mask_from_QA(hdf_file):
     qa_array = qa_array // 2
     cloud_shadow = qa_array % 2
 
-    contaminated = cloud + cloud_shadow
+    contaminated = cloud + cloud_shadow + cirrus
     binary_mask = (contaminated > 0).astype(int)
     return binary_mask, cirrus, cloud, adjacent, cloud_shadow
 
@@ -40,7 +43,7 @@ def plot_mask(mask):
 
 
 def save_cloud_mask(path, cloud_mask):
-    out_path = path + "cloud_mask.tif"
+    out_path = path[:-3]+"/" +"cloud_mask.tif"
     if path.find("cirrus") != -1:
         path = path[:-6]
     if path.find("cloud") != -1:
@@ -61,15 +64,9 @@ def save_cloud_mask(path, cloud_mask):
 
 
 def create_cloudmask(path):
+    if not path:
+        return
     masks = retrieve_cloud_mask_from_QA(path)
     mask = masks[0]
     # plot_mask(mask)
     save_cloud_mask(path, mask)
-    """cirrus_mask = masks[1]
-    cloud_mask = masks[2]
-    shadow_mask = masks[4]
-    adj_mask = masks[3]
-    save_cloud_mask(path + "cirrus", cirrus_mask)
-    save_cloud_mask(path + "cloud", cloud_mask)
-    save_cloud_mask(path + "shadow", shadow_mask)
-    save_cloud_mask(path + "adj", adj_mask)"""

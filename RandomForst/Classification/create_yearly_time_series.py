@@ -1,8 +1,8 @@
 import numpy as np
 import os
-import gdal
+from osgeo import gdal
 
-directoryPath = "../Images"
+directoryPath = "../hls_data"
 
 
 def extract_sensing_month(filepath):

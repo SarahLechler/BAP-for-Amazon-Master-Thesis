@@ -47,3 +47,7 @@ def get_main_image(monthly_images):
 
 if __name__ == "__main__":
     monthly_images = get_images_of_month(6, 2016, "hls_downloads")
+    main_image = get_main_image(monthly_images)
+    monthly_images.remove(main_image)
+    #TODO: sort images per day
+    #TODO: run bap scores on adjacent imagesand fill gaps with high ranked pixel -> recursive

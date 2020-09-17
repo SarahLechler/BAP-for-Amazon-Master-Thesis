@@ -10,6 +10,7 @@ import gdal
 import os
 import datetime
 import numpy as np
+import extractMetadataInformation
 
 
 # get aerosol quality
@@ -46,38 +47,11 @@ def get_aerosol_quality(path, pixel):
         return 3"""
 
 
-def extract_sensing_month(metadata):
-    st_index = metadata.find("SENSING_TIME")
-    if st_index != -1:
-        month = metadata[st_index + 18:st_index + 20]
-        return int(month)
-
-
-def extract_sensing_year(metadata):
-    st_index = metadata.find("SENSING_TIME")
-    if st_index != -1:
-        year = metadata[st_index + 13:st_index + 17]
-        return int(year)
-
-
-def extract_sensing_day(metadata):
-    st_index = metadata.find("SENSING_TIME")
-    if st_index != -1:
-        day = metadata[st_index + 21:st_index + 23]
-        return int(day)
-
-
-def extract_sensing_date(metadata):
-    year = extract_sensing_year(metadata)
-    month = extract_sensing_month(metadata)
-    day = extract_sensing_day(metadata)
-    return datetime.datetime(year, month, day)
-
 
 # getDate and distance to target date
 def get_distance_to_target_date(path, target_date):
     metadata = gdal.Info(path)
-    sensing_date = extract_sensing_date(metadata)
+    sensing_date = extractMetadataInformation.extract_sensing_date(metadata)
     distance_to_target_date = abs(target_date - sensing_date)
     return distance_to_target_date.days
 

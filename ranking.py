@@ -1,5 +1,6 @@
 from osgeo import gdal
 import os
+import extractMetadataInformation
 
 directoryPath = "../../../../scratch/tmp/s_lech05/hls_data/"
 
@@ -49,22 +50,6 @@ def create_list_of_fileshdf5():
                                     filePathArray.append(filePath)
     return filePathArray
 
-
-
-def extract_cloud_coverage(metadata):
-    cc_index = metadata.find("cloud_coverage")
-    if cc_index != -1:
-        cloud_coverage = metadata[cc_index + 15:cc_index + 19]
-        return int(cloud_coverage)
-
-
-def extract_spatial_coverage(metadata):
-    cc_index = metadata.find("spatial_coverage")
-    if cc_index != -1:
-        spatial_coverage = metadata[cc_index + 17:cc_index + 21]
-        return int(spatial_coverage)
-
-
 def group_images_per_month(file_path_array):
     monthly_img2013H = [[]] * 12
     monthly_img2014H = [[]] * 12
@@ -82,8 +67,8 @@ def group_images_per_month(file_path_array):
     for file in file_path_array:
         print(f"working with file {file}")
         file_metadata = gdal.Info(file)
-        year = extract_sensing_year(file_metadata)
-        month = extract_sensing_month(file_metadata)
+        year = extractMetadataInformation.extract_sensing_year(file_metadata)
+        month = extractMetadataInformation.extract_sensing_month(file_metadata)
         if file_metadata.find("21LYH") != -1:
             if year == "2013":
                 if not monthly_img2013H[month - 1]:
@@ -154,16 +139,16 @@ def group_images_per_month(file_path_array):
 def create_cloud_ranking(imgArray):
     if imgArray != []:
         file_metadata = gdal.Info(imgArray[0])
-        cloud_coverage = extract_cloud_coverage(file_metadata)
-        spatial_coverage = extract_spatial_coverage(file_metadata)
+        cloud_coverage = extractMetadataInformation.extract_cloud_coverage(file_metadata)
+        spatial_coverage = extractMetadataInformation.extract_spatial_coverage(file_metadata)
         coverage = spatial_coverage - cloud_coverage
         best_path = imgArray[0]
     else:
         return
     for img in imgArray:
         img_metadata = gdal.Info(img)
-        new_cloud_coverage = extract_cloud_coverage(img_metadata)
-        new_spatial_coverage = extract_spatial_coverage(img_metadata)
+        new_cloud_coverage = extractMetadataInformation.extract_cloud_coverage(img_metadata)
+        new_spatial_coverage = extractMetadataInformation.extract_spatial_coverage(img_metadata)
         new_coverage = new_spatial_coverage - new_cloud_coverage
         if new_coverage > coverage:
             coverage = new_coverage

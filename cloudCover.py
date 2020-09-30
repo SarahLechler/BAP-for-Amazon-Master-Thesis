@@ -14,7 +14,7 @@ from createGeoTiffFromHLS import create_multiband_geotif
 """
 
 import gdal
-from s2cloudless import S2PixelCloudDetector, CloudMaskRequest
+#from s2cloudless import S2PixelCloudDetector, CloudMaskRequest
 import numpy as np
 import os
 import matplotlib.pyplot as plt

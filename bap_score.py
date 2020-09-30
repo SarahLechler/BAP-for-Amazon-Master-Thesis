@@ -11,6 +11,7 @@ import os
 import datetime
 import numpy as np
 import extractMetadataInformation
+import utils
 
 
 # get aerosol quality
@@ -24,27 +25,26 @@ def get_qa_layer(path):
     return qa_path
 
 
-"""
-Aersol Quality: the 7&6 bit Number
-00 = Climatology
-01 = Low
-10 = Average
-11 = High
-"""
-
-
-def get_aerosol_quality(path, pixel):
+def get_aerosol_quality(pixel):
+    """
+    Aersol Quality: the 7&6 bit Number
+    00 = Climatology
+    01 = Low
+    10 = Average
+    11 = High
+    """
     aerosol_value: bin = bin(pixel)[2:4]
     print(int(aerosol_value, 2))
-    return int(aerosol_value, 2)
-    """if aerosol_value == 0b00:
-        return 0
-    elif aerosol_value == 0b01:
-        return 1
-    elif aerosol_value == 0b10:
+    aerosol_value_int = int(aerosol_value, 2)
+    if aerosol_value_int == 0:
+        return 3
+    elif aerosol_value_int == 1:
         return 2
-    elif aerosol_value == 0b11:
-        return 3"""
+    elif aerosol_value_int == 2:
+        return 1
+    elif aerosol_value_int == 3:
+        return 0
+
 
 
 
@@ -57,24 +57,31 @@ def get_distance_to_target_date(path, target_date):
 
 
 # get distance to cloud
-"""Adjacent cloud BitNumber: 2
-1 = Yes
-0 = No"""
-
-
 def get_distance_to_cloud(pixel):
-    """qa_layer = gdal.Open(path)
-    qa_value: int = int(qa_layer[pixel])"""
+    """Adjacent cloud BitNumber: 2
+    1 = Yes
+    0 = No"""
     adjacent_cloud: bin = bin(pixel)[-3:-2]
     return int(adjacent_cloud)
 
 
 def get_bap_score(pixel, path, distance_to_target_date):
     distance_to_cloud = get_distance_to_cloud(pixel)
-    aerosol_quality = get_aerosol_quality(path, pixel)
+    aerosol_quality = get_aerosol_quality(pixel)
     print(f"cloud:{distance_to_cloud}, aerosol: {aerosol_quality}, date:{distance_to_target_date}")
     return distance_to_cloud + aerosol_quality + distance_to_target_date
 
+def main (path, qa_path):
+    metadata = gdal.Info(path)
+    distance_target_date = get_distance_to_target_date(path, datetime.datetime(2016, 8, 15))
+    img = gdal.Open(qa_path)
+    img_array = np.array(img.ReadAsArray())
+    bap_array = np.empty(img_array.shape)
+    for indexrow, pixelrow in enumerate(img_array):
+        for indexpixel, pixel in enumerate(pixelrow):
+            bap_score = get_bap_score(pixel, qa_path, distance_target_date)
+            bap_array[indexrow, pixelrow] = bap_score
+    utils.save_ind_img(path[:-2],bap_array, "bap", qa_path)
 
 if __name__ == "__main__":
     metadata = gdal.Info(testdataL30)
@@ -86,3 +93,4 @@ if __name__ == "__main__":
         for indexpixel, pixel in enumerate(pixelrow):
             bap_score = get_bap_score(pixel, testdataL30QA, distance_target_date)
             bap_array[indexrow, pixelrow] = bap_score
+    utils.save_ind_img(testdataS30,bap_score, "bap", testdataS30)

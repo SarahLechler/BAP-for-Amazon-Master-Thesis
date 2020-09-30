@@ -8,8 +8,10 @@ image is fully filled or images are farther away than 10 days
 """
 import os
 import gdal
-import extractMetadataInformation
+import numpy as np
 
+import extractMetadataInformation
+import bap_score
 
 def get_images_of_month(month, year, directoryPath):
     monthly_images = []
@@ -26,6 +28,8 @@ def get_images_of_month(month, year, directoryPath):
                                 if file.endswith('.h5'):
                                     filePath = os.path.join(dirPath, file)
                                     metadata = gdal.Info(filePath)
+                                    if metadata == None:
+                                        continue
                                     file_month = extractMetadataInformation.extract_sensing_month(metadata)
                                     if file_month == month:
                                         monthly_images.append(filePath)
@@ -44,10 +48,17 @@ def get_main_image(monthly_images):
             main_image = image
     return main_image
 
-
 if __name__ == "__main__":
     monthly_images = get_images_of_month(6, 2016, "hls_downloads")
     main_image = get_main_image(monthly_images)
     monthly_images.remove(main_image)
+    print(main_image)
+    image = monthly_images[0]
+    qa_layer_path = image[:-2]+"/QA_clear_sky.tif"
+    for layer in os.listdir(image[:-2]):
+        if "QA" in layer:
+            qa_layer_path = os.path.join(image[:-2], layer)
+    print(qa_layer_path)
+    bap_score.main(image, qa_layer_path)
     #TODO: sort images per day
-    #TODO: run bap scores on adjacent imagesand fill gaps with high ranked pixel -> recursive
+    #TODO: run bap scores on adjacent images and fill gaps with high ranked pixel -> recursive

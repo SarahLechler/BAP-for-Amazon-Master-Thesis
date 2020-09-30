@@ -27,7 +27,7 @@ import createClearSkyImg
 import calculateIndices
 import ranking
 import create_time_series
-import runBFAST
+#import runBFAST
 import convertToHDF5
 
 
@@ -55,8 +55,8 @@ def runCalcs(calc_array):
 
 
 def createAllImages(path):
-    hlsCloudMask.create_cloudmask(path)
     createGeoTiffFromHLS.create_multiband_geotif(path)
+    hlsCloudMask.create_cloudmask(path)
     clear_sky_path = createClearSkyImg.create_clear_sky_image(path)
     calculateIndices.calculate_indices(clear_sky_path)
 

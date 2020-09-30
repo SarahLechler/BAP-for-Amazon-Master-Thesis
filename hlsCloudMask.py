@@ -67,6 +67,7 @@ def create_cloudmask(path):
     if not path:
         return
     masks = retrieve_cloud_mask_from_QA(path)
-    mask = masks[0]
-    # plot_mask(mask)
-    save_cloud_mask(path, mask)
+    if masks:
+        mask = masks[0]
+        # plot_mask(mask)
+        save_cloud_mask(path, mask)

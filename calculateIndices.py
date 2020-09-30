@@ -116,6 +116,8 @@ def calculate_rndsi(ca, blue, green, red, nir, swir2):
 
 def save_ind_img(path, ind, name, template_file):
     out_path = path + name + '.tif'
+    if (os.path.isfile(out_path)):
+        return
     # print(f"saved file to {out_path}")
     ind_output = gdal_array.SaveArray(ind, out_path, format="GTiff", prototype=template_file)
     ind_output = None
@@ -123,6 +125,8 @@ def save_ind_img(path, ind, name, template_file):
 
 def calculate_indices(bands):
     # get specific bands
+    if not bands:
+        return
     for band in bands:
         if band.find("B08") != -1 or band.find("d05") != -1:
             nir_band = gdal.Open(band)

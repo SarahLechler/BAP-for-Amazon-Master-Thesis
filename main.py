@@ -6,6 +6,7 @@ This code aims to pre-process hls-datasets (specifically the tiles 21LYH anf 21L
 
 from osgeo import gdal_array
 import multiprocessing as mp
+import os
 # hls download test
 # from bs4 import BeautifulSoup
 import collections
@@ -55,6 +56,8 @@ def runCalcs(calc_array):
 
 
 def createAllImages(path):
+    if not (os.path.isdir(path[:-3])):
+        os.mkdir(path[:-3])
     createGeoTiffFromHLS.create_multiband_geotif(path)
     hlsCloudMask.create_cloudmask(path)
     clear_sky_path = createClearSkyImg.create_clear_sky_image(path)

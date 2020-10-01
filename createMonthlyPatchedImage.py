@@ -50,15 +50,19 @@ def get_main_image(monthly_images):
 
 if __name__ == "__main__":
     monthly_images = get_images_of_month(6, 2016, "hls_downloads")
-    main_image = get_main_image(monthly_images)
+    """main_image = get_main_image(monthly_images)
     monthly_images.remove(main_image)
-    print(main_image)
-    image = monthly_images[0]
-    qa_layer_path = image[:-2]+"/QA_clear_sky.tif"
-    for layer in os.listdir(image[:-2]):
-        if "QA" in layer:
-            qa_layer_path = os.path.join(image[:-2], layer)
-    print(qa_layer_path)
-    bap_score.main(image, qa_layer_path)
+    print(main_image)"""
+    bap_stack = []
+    for image in monthly_images:
+        qa_layer_path = image[:-2] + "/QA_clear_sky.tif"
+        for layer in os.listdir(image[:-2]):
+            if "QA" in layer & "clear":
+                qa_layer_path = os.path.join(image[:-2], layer)
+        print(qa_layer_path)
+        bap_array = bap_score.main(image, qa_layer_path)
+        bap_stack.append(bap_array)
+    print(bap_stack)
+
     #TODO: sort images per day
     #TODO: run bap scores on adjacent images and fill gaps with high ranked pixel -> recursive

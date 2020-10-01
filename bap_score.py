@@ -46,8 +46,6 @@ def get_aerosol_quality(pixel):
         return 0
 
 
-
-
 # getDate and distance to target date
 def get_distance_to_target_date(path, target_date):
     metadata = gdal.Info(path)
@@ -65,13 +63,25 @@ def get_distance_to_cloud(pixel):
     return int(adjacent_cloud)
 
 
+def covered_by_cloud(pixel):
+    cloud_pixel = [0, 4, 16, 20, 32, 36, 48, 52, 64, 68, 80, 84, 96,
+                   100, 112, 116, 128, 132, 144, 148, 160, 164, 176, 180, 192, 196,
+                   208, 212, 224, 228, 240, 244]
+    if int(pixel) in cloud_pixel:
+        return 255
+    else:
+        return 0
+
+
 def get_bap_score(pixel, path, distance_to_target_date):
+    cloud_covered = covered_by_cloud(pixel)
     distance_to_cloud = get_distance_to_cloud(pixel)
     aerosol_quality = get_aerosol_quality(pixel)
-    print(f"cloud:{distance_to_cloud}, aerosol: {aerosol_quality}, date:{distance_to_target_date}")
-    return distance_to_cloud + aerosol_quality + distance_to_target_date
+    print(f"cloud:{distance_to_cloud}, aerosol: {aerosol_quality}, date:{distance_to_target_date} cloud: {cloud_covered}")
+    return distance_to_cloud + aerosol_quality + distance_to_target_date + cloud_covered
 
-def main (path, qa_path):
+
+def main(path, qa_path):
     metadata = gdal.Info(path)
     distance_target_date = get_distance_to_target_date(path, datetime.datetime(2016, 8, 15))
     img = gdal.Open(qa_path)
@@ -81,7 +91,8 @@ def main (path, qa_path):
         for indexpixel, pixel in enumerate(pixelrow):
             bap_score = get_bap_score(pixel, qa_path, distance_target_date)
             bap_array[indexrow, pixelrow] = bap_score
-    utils.save_ind_img(path[:-2],bap_array, "bap", qa_path)
+    return bap_array
+
 
 if __name__ == "__main__":
     metadata = gdal.Info(testdataL30)
@@ -93,4 +104,4 @@ if __name__ == "__main__":
         for indexpixel, pixel in enumerate(pixelrow):
             bap_score = get_bap_score(pixel, testdataL30QA, distance_target_date)
             bap_array[indexrow, pixelrow] = bap_score
-    utils.save_ind_img(testdataS30,bap_score, "bap", testdataS30)
+    utils.save_ind_img(testdataS30, bap_score, "bap", testdataS30)

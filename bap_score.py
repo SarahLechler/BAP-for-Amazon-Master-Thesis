@@ -57,13 +57,13 @@ def get_distance_to_cloud(pixel):
 
 
 def covered_by_cloud(pixel):
-    cloud_pixel = [0, 4, 16, 20, 32, 36, 48, 52, 64, 68, 80, 84, 96,
+    cloudfree_pixel = [0, 4, 16, 20, 32, 36, 48, 52, 64, 68, 80, 84, 96,
                    100, 112, 116, 128, 132, 144, 148, 160, 164, 176, 180, 192, 196,
                    208, 212, 224, 228, 240, 244]
-    if int(pixel) in cloud_pixel:
-        return 255
-    else:
+    if not int(pixel) in cloudfree_pixel:
         return 0
+    else:
+        return 25
 
 
 def get_bap_score(pixel, path, distance_to_target_date):

@@ -36,14 +36,7 @@ def get_aerosol_quality(pixel):
     aerosol_value: bin = bin(pixel)[2:4]
     print(int(aerosol_value, 2))
     aerosol_value_int = int(aerosol_value, 2)
-    if aerosol_value_int == 0:
-        return 3
-    elif aerosol_value_int == 1:
-        return 2
-    elif aerosol_value_int == 2:
-        return 1
-    elif aerosol_value_int == 3:
-        return 0
+    return aerosol_value_int
 
 
 # getDate and distance to target date

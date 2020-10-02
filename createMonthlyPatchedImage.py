@@ -49,6 +49,25 @@ def get_main_image(monthly_images):
     return main_image
 
 if __name__ == "__main__":
+    years = [2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020]
+    months = [8, 9, 10, 11, 12, 1, 2, 3, 4, 5, 6, 7]
+    for year in years:
+        for month in months:
+            monthly_images = get_images_of_month(month, year, "hls_downloads")
+            """main_image = get_main_image(monthly_images)
+            monthly_images.remove(main_image)
+            print(main_image)"""
+            bap_stack = []
+            for image in monthly_images:
+                qa_layer_path = image[:-2] + "/QA_clear_sky.tif"
+                for layer in os.listdir(image[:-2]):
+                    if "QA" in layer & "clear":
+                        qa_layer_path = os.path.join(image[:-2], layer)
+                print(qa_layer_path)
+                bap_array = bap_score.main(image, qa_layer_path)
+                bap_stack.append(bap_array)
+            print(bap_stack)
+
     monthly_images = get_images_of_month(6, 2016, "hls_downloads")
     """main_image = get_main_image(monthly_images)
     monthly_images.remove(main_image)

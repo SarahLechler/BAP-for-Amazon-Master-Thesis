@@ -9,15 +9,17 @@ image is fully filled or images are farther away than 10 days
 import os
 import gdal
 import numpy as np
+import datetime
 
 import extractMetadataInformation
 import bap_score
 
-def get_images_of_month(month, year, directoryPath):
+
+def get_images_of_month(month, year, directoryPath, tile):
     monthly_images = []
     for item in os.listdir(directoryPath):
         tilePath = os.path.join(directoryPath, item)
-        if os.path.isdir(tilePath) and (item == "21LYG" or item == "21LYH"):
+        if os.path.isdir(tilePath) and item == tile:
             for year_folder in os.listdir(tilePath):
                 if int(year_folder) == year:
                     year_path = os.path.join(tilePath, year_folder)
@@ -48,15 +50,24 @@ def get_main_image(monthly_images):
             main_image = image
     return main_image
 
+
+def list_index(index, monthly_images):
+    index_list = []
+    for image in monthly_images:
+        for file in os.listdir(image[:-3]):
+            print(file)
+            if index in file:
+                index_img = gdal.Open(os.path.join(image[:-3], file))
+                index_list.append(index_img.ReadAsArray())
+    return index_list
+
+
 if __name__ == "__main__":
-    years = [2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020]
+    """years = [2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020]
     months = [8, 9, 10, 11, 12, 1, 2, 3, 4, 5, 6, 7]
     for year in years:
         for month in months:
             monthly_images = get_images_of_month(month, year, "hls_downloads")
-            """main_image = get_main_image(monthly_images)
-            monthly_images.remove(main_image)
-            print(main_image)"""
             bap_stack = []
             for image in monthly_images:
                 qa_layer_path = image[:-2] + "/QA_clear_sky.tif"
@@ -66,22 +77,27 @@ if __name__ == "__main__":
                 print(qa_layer_path)
                 bap_array = bap_score.main(image, qa_layer_path)
                 bap_stack.append(bap_array)
-            print(bap_stack)
+            print(bap_stack)"""
 
-    monthly_images = get_images_of_month(6, 2016, "hls_downloads")
+    monthly_images = get_images_of_month(7, 2017, "hls_dataset", "21LYG")
     """main_image = get_main_image(monthly_images)
     monthly_images.remove(main_image)
     print(main_image)"""
     bap_stack = []
     for image in monthly_images:
-        qa_layer_path = image[:-2] + "/QA_clear_sky.tif"
-        for layer in os.listdir(image[:-2]):
-            if "QA" in layer & "clear":
-                qa_layer_path = os.path.join(image[:-2], layer)
+        qa_layer_path = image[:-3] + "/QA_clear_sky.tif"
+        for layer in os.listdir(image[:-3]):
+            if "QA" in layer and "clear" in layer:
+                qa_layer_path = os.path.join(image[:-3], layer)
         print(qa_layer_path)
-        bap_array = bap_score.main(image, qa_layer_path)
+        bap_array = bap_score.main(image, qa_layer_path, datetime.datetime(2017, 7, 15))
         bap_stack.append(bap_array)
-    print(bap_stack)
+    bap_array=np.array(bap_stack)
+    print(bap_array.shape)
+    bpa_pixel = np.argmin(bap_array, axis=0)
+    print(bpa_pixel.shape)
+    ndvi_array = np.array(list_index("NDVI", monthly_images))
+    print(ndvi_array.shape)
+    ndvi_bpa = np.choose(bpa_pixel, ndvi_array)
+    print(ndvi_bpa)
 
-    #TODO: sort images per day
-    #TODO: run bap scores on adjacent images and fill gaps with high ranked pixel -> recursive

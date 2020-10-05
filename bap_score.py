@@ -34,7 +34,6 @@ def get_aerosol_quality(pixel):
     11 = High
     """
     aerosol_value: bin = bin(pixel)[2:4]
-    print(int(aerosol_value, 2))
     aerosol_value_int = int(aerosol_value, 2)
     return aerosol_value_int
 
@@ -61,35 +60,39 @@ def covered_by_cloud(pixel):
                    100, 112, 116, 128, 132, 144, 148, 160, 164, 176, 180, 192, 196,
                    208, 212, 224, 228, 240, 244]
     if not int(pixel) in cloudfree_pixel:
-        return 0
-    else:
         return 255
+    else:
+        return 0
 
 
 def get_bap_score(pixel, path, distance_to_target_date):
     cloud_covered = covered_by_cloud(pixel)
     distance_to_cloud = get_distance_to_cloud(pixel)
     aerosol_quality = get_aerosol_quality(pixel)
-    print(f"cloud:{distance_to_cloud}, aerosol: {aerosol_quality}, date:{distance_to_target_date} cloud: {cloud_covered}")
+    #print(f"cloud:{distance_to_cloud}, aerosol: {aerosol_quality}, date:{distance_to_target_date} cloud: {cloud_covered}")
     return distance_to_cloud + aerosol_quality + distance_to_target_date + cloud_covered
 
 
-def main(path, qa_path):
+def main(path, qa_path, target_date):
+    print("start calculating bap for image: " + path)
     metadata = gdal.Info(path)
-    distance_target_date = get_distance_to_target_date(path, datetime.datetime(2016, 8, 15))
+    distance_target_date = get_distance_to_target_date(path, target_date)
     img = gdal.Open(qa_path)
     img_array = np.array(img.ReadAsArray())
     bap_array = np.empty(img_array.shape)
     for indexrow, pixelrow in enumerate(img_array):
         for indexpixel, pixel in enumerate(pixelrow):
-            bap_score = get_bap_score(pixel, qa_path, distance_target_date)
-            bap_array[indexrow, pixelrow] = bap_score
+            if pixel == None:
+                bap_array[indexrow, pixelrow] = None
+            else:
+                bap_score = get_bap_score(pixel, qa_path, distance_target_date)
+                bap_array[indexrow, pixelrow] = bap_score
     return bap_array
 
 
 if __name__ == "__main__":
     metadata = gdal.Info(testdataL30)
-    distance_target_date = get_distance_to_target_date(testdataL30, datetime.datetime(2016, 8, 15))
+    distance_target_date = get_distance_to_target_date(testdataL30, datetime.datetime(2017, 7, 15))
     img = gdal.Open(testdataL30QA)
     img_array = np.array(img.ReadAsArray())
     bap_array = np.empty(img_array.shape)
@@ -98,3 +101,4 @@ if __name__ == "__main__":
             bap_score = get_bap_score(pixel, testdataL30QA, distance_target_date)
             bap_array[indexrow, pixelrow] = bap_score
     utils.save_ind_img(testdataS30, bap_score, "bap", testdataS30)
+    """TODO: Choose best rated pixel and save it to new image"""

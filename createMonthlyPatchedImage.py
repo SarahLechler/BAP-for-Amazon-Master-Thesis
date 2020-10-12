@@ -11,8 +11,8 @@ import gdal
 import numpy as np
 import datetime
 
-import extractMetadataInformation
 import bap_score
+import utils
 
 
 def get_images_of_month(month, year, directoryPath, tile):
@@ -32,57 +32,23 @@ def get_images_of_month(month, year, directoryPath, tile):
                                     metadata = gdal.Info(filePath)
                                     if metadata == None:
                                         continue
-                                    file_month = extractMetadataInformation.extract_sensing_month(metadata)
+                                    file_month = utils.extract_sensing_month(metadata)
                                     if file_month == month:
                                         monthly_images.append(filePath)
     return monthly_images
-
-
-def get_main_image(monthly_images):
-    distance_to_target = 10
-    main_image = ""
-    for image in monthly_images:
-        day = extractMetadataInformation.extract_sensing_day(gdal.Info(image))
-        if day == 15:
-            main_image = image
-        elif abs(day - 15) < distance_to_target:
-            distance_to_target = day
-            main_image = image
-    return main_image
-
 
 def list_index(index, monthly_images):
     index_list = []
     for image in monthly_images:
         for file in os.listdir(image[:-3]):
-            print(file)
-            if index in file:
+            if index in file and not "BAP" in file:
+                print(file)
                 index_img = gdal.Open(os.path.join(image[:-3], file))
                 index_list.append(index_img.ReadAsArray())
     return index_list
 
-
-if __name__ == "__main__":
-    """years = [2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020]
-    months = [8, 9, 10, 11, 12, 1, 2, 3, 4, 5, 6, 7]
-    for year in years:
-        for month in months:
-            monthly_images = get_images_of_month(month, year, "hls_downloads")
-            bap_stack = []
-            for image in monthly_images:
-                qa_layer_path = image[:-2] + "/QA_clear_sky.tif"
-                for layer in os.listdir(image[:-2]):
-                    if "QA" in layer & "clear":
-                        qa_layer_path = os.path.join(image[:-2], layer)
-                print(qa_layer_path)
-                bap_array = bap_score.main(image, qa_layer_path)
-                bap_stack.append(bap_array)
-            print(bap_stack)"""
-
-    monthly_images = get_images_of_month(7, 2017, "hls_dataset", "21LYG")
-    """main_image = get_main_image(monthly_images)
-    monthly_images.remove(main_image)
-    print(main_image)"""
+def main(month, year, foldername, tile, index):
+    monthly_images = get_images_of_month(month, year, foldername, tile)
     bap_stack = []
     for image in monthly_images:
         qa_layer_path = image[:-3] + "/QA_clear_sky.tif"
@@ -90,14 +56,42 @@ if __name__ == "__main__":
             if "QA" in layer and "clear" in layer:
                 qa_layer_path = os.path.join(image[:-3], layer)
         print(qa_layer_path)
-        bap_array = bap_score.main(image, qa_layer_path, datetime.datetime(2017, 7, 15))
+        bap_array = bap_score.main(image, qa_layer_path, datetime.datetime(year, month, 15))
+        bap_stack.append(bap_array)
+    bap_array = np.array(bap_stack)
+    print(bap_array.shape)
+    bpa_pixel = np.argmin(bap_array, axis=0)
+    utils.save_ind_img(monthly_images[0][:-3], bpa_pixel, index + "argmin" + month, monthly_images[0][:-3] + "/NDVI.tif", True)
+    index_array = np.array(list_index(index, monthly_images))
+    print(index_array.shape)
+    index_bpa = np.choose(bpa_pixel, index_array)
+    utils.save_ind_img(monthly_images[0][:-2], index_bpa, index + "_BAP" + month, monthly_images[0][:-3] + "/NDVI.tif", True)
+    print(index_bpa)
+
+
+if __name__ == "__main__":
+    """years = [2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020]
+    months = [8, 9, 10, 11, 12, 1, 2, 3, 4, 5, 6, 7]"""
+
+    monthly_images = get_images_of_month(5, 2017, "hls_dataset", "21LYG")
+    bap_stack = []
+    for image in monthly_images:
+        qa_layer_path = image[:-3] + "/QA_clear_sky.tif"
+        for layer in os.listdir(image[:-3]):
+            if "QA" in layer and "clear" in layer:
+                qa_layer_path = os.path.join(image[:-3], layer)
+        print(qa_layer_path)
+        bap_array = bap_score.main(image, qa_layer_path, datetime.datetime(2017, 5, 15))
+        print(bap_array)
         bap_stack.append(bap_array)
     bap_array=np.array(bap_stack)
     print(bap_array.shape)
     bpa_pixel = np.argmin(bap_array, axis=0)
+    #utils.save_ind_img(monthly_images[0][:-3], np.int(bpa_pixel), "argmin" + "January", monthly_images[0][:-3] + "/NDVI.tif", True)
     print(bpa_pixel.shape)
-    ndvi_array = np.array(list_index("NDVI", monthly_images))
+    ndvi_array = np.array(list_index("SAVI", monthly_images))
     print(ndvi_array.shape)
     ndvi_bpa = np.choose(bpa_pixel, ndvi_array)
+    utils.save_ind_img(monthly_images[0][:-2], ndvi_bpa, "SAVI_BAP", monthly_images[0][:-3] +"/SAVI.tif", True )
     print(ndvi_bpa)
 

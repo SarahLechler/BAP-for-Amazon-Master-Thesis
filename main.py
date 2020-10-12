@@ -73,19 +73,11 @@ def createTS(index, year, tile, directoryPath):
             for year_folder in os.listdir(tilePath):
                 if int(year_folder) == year:
                     year_path = os.path.join(tilePath, year_folder)
-                    for hlsDirectory in os.listdir(year_path):
-                        dirPath = os.path.join(year_path, hlsDirectory)
-                        if os.path.isdir(dirPath):
-                            for file in os.listdir(dirPath):
-                                if file.endswith('.h5'):
-                                    filePath = os.path.join(dirPath, file)
-                                    metadata = gdal.Info(filePath)
-                                    if metadata == None:
-                                        continue
-                                    file_month = utils.extract_sensing_month(metadata)
-                                    if file_month == month:
-                                        monthly_images.append(filePath)
-    return monthly_images
+                    for index_bap_files in os.listdir(year_path):
+                        if index_bap_files.endswith(".tif") and index in index_bap_files:
+                            index_path = os.path.join(year_path, index_bap_files)
+                            yearly_images.append(index_path)
+    return yearly_images
 
 if __name__ == '__main__':
     img_paths = ranking.create_list_of_fileshdf5()

@@ -10,7 +10,6 @@ import gdal
 import os
 import datetime
 import numpy as np
-import extractMetadataInformation
 import utils
 
 
@@ -41,7 +40,7 @@ def get_aerosol_quality(pixel):
 # getDate and distance to target date
 def get_distance_to_target_date(path, target_date):
     metadata = gdal.Info(path)
-    sensing_date = extractMetadataInformation.extract_sensing_date(metadata)
+    sensing_date = utils.extract_sensing_date(metadata)
     distance_to_target_date = abs(target_date - sensing_date)
     return distance_to_target_date.days
 
@@ -69,8 +68,9 @@ def get_bap_score(pixel, path, distance_to_target_date):
     cloud_covered = covered_by_cloud(pixel)
     distance_to_cloud = get_distance_to_cloud(pixel)
     aerosol_quality = get_aerosol_quality(pixel)
-    #print(f"cloud:{distance_to_cloud}, aerosol: {aerosol_quality}, date:{distance_to_target_date} cloud: {cloud_covered}")
-    return distance_to_cloud + aerosol_quality + distance_to_target_date + cloud_covered
+    # print(f"cloud distance:{distance_to_cloud}, aerosol: {aerosol_quality}, date:{distance_to_target_date} cloud: {cloud_covered}")
+    bap = distance_to_cloud + aerosol_quality + distance_to_target_date + cloud_covered
+    return bap
 
 
 def main(path, qa_path, target_date):
@@ -80,13 +80,13 @@ def main(path, qa_path, target_date):
     img = gdal.Open(qa_path)
     img_array = np.array(img.ReadAsArray())
     bap_array = np.empty(img_array.shape)
-    for indexrow, pixelrow in enumerate(img_array):
-        for indexpixel, pixel in enumerate(pixelrow):
-            if pixel == None:
-                bap_array[indexrow, pixelrow] = None
-            else:
-                bap_score = get_bap_score(pixel, qa_path, distance_target_date)
-                bap_array[indexrow, pixelrow] = bap_score
+    for index, pixel in np.ndenumerate(img_array):
+        if pixel == None or pixel == np.nan or pixel == 0:
+            bap_array[index] = 260
+        else:
+            bap_score = get_bap_score(pixel, qa_path, distance_target_date)
+            bap_array[index] = bap_score
+    print(bap_array)
     return bap_array
 
 
@@ -101,4 +101,3 @@ if __name__ == "__main__":
             bap_score = get_bap_score(pixel, testdataL30QA, distance_target_date)
             bap_array[indexrow, pixelrow] = bap_score
     utils.save_ind_img(testdataS30, bap_score, "bap", testdataS30)
-    """TODO: Choose best rated pixel and save it to new image"""

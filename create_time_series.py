@@ -82,9 +82,25 @@ input:  index name String (NDVI, RNSDI, SAVI, GEMI EVI)
         portion array with Integers describing the portion of the image
 """
 
+def get_indice_bap_img_paths(index, tile, directoryPath):
+    yearly_images = []
+    for item in os.listdir(directoryPath):
+        tilePath = os.path.join(directoryPath, item)
+        if os.path.isdir(tilePath) and item == tile:
+            for year_folder in os.listdir(tilePath):
+                year_path = os.path.join(tilePath, year_folder)
+                for index_bap_files in os.listdir(year_path):
+                    if index_bap_files.endswith(".tif") and index in index_bap_files:
+                        index_path = os.path.join(year_path, index_bap_files)
+                        yearly_images.append(index_path)
+    return yearly_images
 
-def create_time_series(name, tile, portion):
-    paths = get_indice_img_paths(name, tile)
+
+def create_time_series(name, tile, portion, bap):
+    if bap:
+        paths = get_indice_bap_img_paths(name, tile, "hls_dataset")
+    else:
+        paths = get_indice_img_paths(name, tile)
     sortedImgPaths = sortImgPahts(paths)
     time_series = get_pixel_value_array(sortedImgPaths, portion[0], portion[1])
     print(f"Finish creating time_series for tile {tile} and index {name}")

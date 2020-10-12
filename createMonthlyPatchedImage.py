@@ -55,18 +55,17 @@ def main(month, year, foldername, tile, index):
         for layer in os.listdir(image[:-3]):
             if "QA" in layer and "clear" in layer:
                 qa_layer_path = os.path.join(image[:-3], layer)
-        print(qa_layer_path)
         bap_array = bap_score.main(image, qa_layer_path, datetime.datetime(year, month, 15))
         bap_stack.append(bap_array)
     bap_array = np.array(bap_stack)
-    print(bap_array.shape)
+    print(bap_array)
+    if bap_array.size == 0:
+        return
     bpa_pixel = np.argmin(bap_array, axis=0)
-    utils.save_ind_img(monthly_images[0][:-3], bpa_pixel, index + "argmin" + month, monthly_images[0][:-3] + "/NDVI.tif", True)
     index_array = np.array(list_index(index, monthly_images))
-    print(index_array.shape)
     index_bpa = np.choose(bpa_pixel, index_array)
-    utils.save_ind_img(monthly_images[0][:-2], index_bpa, index + "_BAP" + month, monthly_images[0][:-3] + "/NDVI.tif", True)
-    print(index_bpa)
+    utils.save_ind_img(monthly_images[0][:-35], index_bpa, index + "_BAP_" + str(month), monthly_images[0][:-3] + "/NDVI.tif", True)
+    print(f"BAP calculated for {month} {year} for {index}")
 
 
 if __name__ == "__main__":
@@ -81,7 +80,7 @@ if __name__ == "__main__":
             if "QA" in layer and "clear" in layer:
                 qa_layer_path = os.path.join(image[:-3], layer)
         print(qa_layer_path)
-        bap_array = bap_score.main(image, qa_layer_path, datetime.datetime(2017, 5, 15))
+        bap_array = bap_score.main(image, qa_layer_path, datetime.datetime(2017, 1, 15))
         print(bap_array)
         bap_stack.append(bap_array)
     bap_array=np.array(bap_stack)
@@ -89,9 +88,8 @@ if __name__ == "__main__":
     bpa_pixel = np.argmin(bap_array, axis=0)
     #utils.save_ind_img(monthly_images[0][:-3], np.int(bpa_pixel), "argmin" + "January", monthly_images[0][:-3] + "/NDVI.tif", True)
     print(bpa_pixel.shape)
-    ndvi_array = np.array(list_index("SAVI", monthly_images))
+    ndvi_array = np.array(list_index("NDVI", monthly_images))
     print(ndvi_array.shape)
-    ndvi_bpa = np.choose(bpa_pixel, ndvi_array)
-    utils.save_ind_img(monthly_images[0][:-2], ndvi_bpa, "SAVI_BAP", monthly_images[0][:-3] +"/SAVI.tif", True )
-    print(ndvi_bpa)
+    index_bpa = np.choose(bpa_pixel, ndvi_array)
+    utils.save_ind_img(monthly_images[0][:-35], index_bpa, "NDVI_BAP", monthly_images[0][:-3] +"/NDVI.tif", True )
 

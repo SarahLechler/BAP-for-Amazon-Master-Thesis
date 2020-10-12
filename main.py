@@ -15,13 +15,12 @@ import datetime
 import fnmatch
 import numpy as np
 import pandas as pd
-from pathlib import Path
-import rasterio
-import requests
-from subprocess import Popen, PIPE
+#import rasterio
+#import requests
+#from subprocess import Popen, PIPE
 # from tqdm import tqdm
-import urllib
-import warnings
+#import urllib
+#import warnings
 
 import hlsCloudMask
 import createGeoTiffFromHLS
@@ -30,6 +29,7 @@ import calculateIndices
 import ranking
 import create_time_series
 import utils
+import createMonthlyPatchedImage
 # import runBFAST
 import convertToHDF5
 
@@ -58,6 +58,7 @@ def runCalcs(calc_array):
 
 
 def createAllImages(path):
+    print(path)
     if not (os.path.isdir(path[:-3])):
         os.mkdir(path[:-3])
     createGeoTiffFromHLS.create_multiband_geotif(path)
@@ -65,21 +66,22 @@ def createAllImages(path):
     clear_sky_path = createClearSkyImg.create_clear_sky_image(path)
     calculateIndices.calculate_indices(clear_sky_path)
 
-def createTS(index, year, tile, directoryPath):
-    yearly_images = []
-    for item in os.listdir(directoryPath):
-        tilePath = os.path.join(directoryPath, item)
-        if os.path.isdir(tilePath) and item == tile:
-            for year_folder in os.listdir(tilePath):
-                if int(year_folder) == year:
-                    year_path = os.path.join(tilePath, year_folder)
-                    for index_bap_files in os.listdir(year_path):
-                        if index_bap_files.endswith(".tif") and index in index_bap_files:
-                            index_path = os.path.join(year_path, index_bap_files)
-                            yearly_images.append(index_path)
-    return yearly_images
+
+
+
+
+def run_bap(year):
+    months = [8, 9, 10, 11, 12, 1, 2, 3, 4, 5, 6, 7]
+    indices = ["SAVI", "EVI", "NDVI", "GEMI"]
+    tiles = ["21LYG", "21LYH"]
+    for month in months:
+        for index in indices:
+            for tile in tiles:
+                createMonthlyPatchedImage.main(month, year, "../../../../scratch/tmp/s_lech05/hls_data", tile, index)
+
 
 if __name__ == '__main__':
+    """
     img_paths = ranking.create_list_of_fileshdf5()
     # STEP 1: create images and cloudmask, mask out cloud and calculate indices in parallel
     print("starting Image Pool")
@@ -87,8 +89,14 @@ if __name__ == '__main__':
     result = pool.map(createAllImages, img_paths)
     pool.close()
     pool.join()
-
-    # STEP 2: run BFAST algorithm in parallel
+    """
+    # STEP 2: Run BAP method for given years and indices
+    years = [2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020]
+    pool = mp.Pool(2)
+    result = pool.map(run_bap, years)
+    pool.close()
+    pool.join()
+     # STEP 2: run BFAST algorithm in parallel
     """print("starting bfast Pool")
     img_array = [["EVI", "21LYH"], ["EVI", "21LYG"],
                  ["SAVI", "21LYH"], ["SAVI", "21LYG"]]

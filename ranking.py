@@ -1,6 +1,6 @@
 from osgeo import gdal
 import os
-import extractMetadataInformation
+import utils
 
 directoryPath = "../../../../scratch/tmp/s_lech05/hls_data/"
 
@@ -33,6 +33,7 @@ def create_list_of_files():
                                 filePathArray.append(filePath)
     return filePathArray
 
+
 def create_list_of_fileshdf5():
     filePathArray = []
     for item in os.listdir(directoryPath):
@@ -49,6 +50,7 @@ def create_list_of_fileshdf5():
                                     filePath = os.path.join(dirPath, file)
                                     filePathArray.append(filePath)
     return filePathArray
+
 
 def group_images_per_month(file_path_array):
     monthly_img2013H = [[]] * 12
@@ -67,8 +69,8 @@ def group_images_per_month(file_path_array):
     for file in file_path_array:
         print(f"working with file {file}")
         file_metadata = gdal.Info(file)
-        year = extractMetadataInformation.extract_sensing_year(file_metadata)
-        month = extractMetadataInformation.extract_sensing_month(file_metadata)
+        year = utils.extract_sensing_year(file_metadata)
+        month = utils.extract_sensing_month(file_metadata)
         if file_metadata.find("21LYH") != -1:
             if year == "2013":
                 if not monthly_img2013H[month - 1]:
@@ -133,22 +135,23 @@ def group_images_per_month(file_path_array):
                     monthly_img2018G[month - 1].append(file)
     monthly_img2013G = [x for x in monthly_img2013G if x != []]
     monthly_img2013H = [x for x in monthly_img2013H if x != []]
-    return [monthly_img2013G, monthly_img2013H, monthly_img2014G, monthly_img2014H, monthly_img2015G, monthly_img2015H, monthly_img2016G, monthly_img2016H, monthly_img2017G, monthly_img2017H, monthly_img2018G, monthly_img2018H]
+    return [monthly_img2013G, monthly_img2013H, monthly_img2014G, monthly_img2014H, monthly_img2015G, monthly_img2015H,
+            monthly_img2016G, monthly_img2016H, monthly_img2017G, monthly_img2017H, monthly_img2018G, monthly_img2018H]
 
 
 def create_cloud_ranking(imgArray):
     if imgArray != []:
         file_metadata = gdal.Info(imgArray[0])
-        cloud_coverage = extractMetadataInformation.extract_cloud_coverage(file_metadata)
-        spatial_coverage = extractMetadataInformation.extract_spatial_coverage(file_metadata)
+        cloud_coverage = utils.extract_cloud_coverage(file_metadata)
+        spatial_coverage = utils.extract_spatial_coverage(file_metadata)
         coverage = spatial_coverage - cloud_coverage
         best_path = imgArray[0]
     else:
         return
     for img in imgArray:
         img_metadata = gdal.Info(img)
-        new_cloud_coverage = extractMetadataInformation.extract_cloud_coverage(img_metadata)
-        new_spatial_coverage = extractMetadataInformation.extract_spatial_coverage(img_metadata)
+        new_cloud_coverage = utils.extract_cloud_coverage(img_metadata)
+        new_spatial_coverage = utils.extract_spatial_coverage(img_metadata)
         new_coverage = new_spatial_coverage - new_cloud_coverage
         if new_coverage > coverage:
             coverage = new_coverage

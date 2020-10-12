@@ -25,14 +25,14 @@ def download_data(data_def, tile, year, product):
 
     data_def["id"] = data_def["url"].str.split("/", expand=True)[11].str[0:-4]
     print(data_def)
-    data_def["path"] = "../../../../scratch/tmp/s_lech05/hls_data/" + tile + "/" + year + "/" + product + "/" + data_def["id"] + ".hdf"
+    data_def["path"] = "./hls_dataset/" #"../../../../scratch/tmp/s_lech05/hls_data/" + tile + "/" + year + "/" + product + "/" + data_def["id"] + ".hdf"
     data_def
 
 
 if __name__ == '__main__':
-    years = [2015] #[2013, 2014, 2015,2016, 2017,2018,2019, 2020]
-    products = ["L30"]# , "S30"]
-    tiles = ["21LYG"] #["21LYH",
+    years = [2017,2018,2019] #2013, 2014, 2015,2016, 2020
+    products = ["L30", "S30"]
+    tiles = ["21LYG", "21LYH"]
     for year in years:
         for product in products:
             if (year == 2013 or year == 2014) and product == 'S30':
@@ -48,10 +48,11 @@ if __name__ == '__main__':
                     # filteredData = filter_data(df_datasets)
                     download_data(df_datasets, tile, str(year), product)
 
-    df_datasets = nasa_hls.get_available_datasets(products=["L30", "S30"],
+    """df_datasets = nasa_hls.get_available_datasets(products=["L30", "S30"],
                                                   years=[2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020],
                                                   tiles=["21LYH", "21LYG"],
                                                   return_list=False)
     print("Number of datasets: ", df_datasets.shape[0])
     # filteredData = filter_data(df_datasets)
     download_data(df_datasets)
+"""

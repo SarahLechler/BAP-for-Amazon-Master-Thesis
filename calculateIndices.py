@@ -3,6 +3,8 @@ from osgeo import gdal
 import numpy as np
 import os
 
+import utils
+
 
 def applyCloudMask(ndvi, index_array):
 

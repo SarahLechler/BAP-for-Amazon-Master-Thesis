@@ -7,6 +7,7 @@ This code aims to pre-process hls-datasets (specifically the tiles 21LYH anf 21L
 from osgeo import gdal_array
 import multiprocessing as mp
 import os
+import gdal
 # hls download test
 # from bs4 import BeautifulSoup
 import collections
@@ -28,7 +29,8 @@ import createClearSkyImg
 import calculateIndices
 import ranking
 import create_time_series
-#import runBFAST
+import utils
+# import runBFAST
 import convertToHDF5
 
 
@@ -63,8 +65,27 @@ def createAllImages(path):
     clear_sky_path = createClearSkyImg.create_clear_sky_image(path)
     calculateIndices.calculate_indices(clear_sky_path)
 
-
-
+def createTS(index, year, tile, directoryPath):
+    yearly_images = []
+    for item in os.listdir(directoryPath):
+        tilePath = os.path.join(directoryPath, item)
+        if os.path.isdir(tilePath) and item == tile:
+            for year_folder in os.listdir(tilePath):
+                if int(year_folder) == year:
+                    year_path = os.path.join(tilePath, year_folder)
+                    for hlsDirectory in os.listdir(year_path):
+                        dirPath = os.path.join(year_path, hlsDirectory)
+                        if os.path.isdir(dirPath):
+                            for file in os.listdir(dirPath):
+                                if file.endswith('.h5'):
+                                    filePath = os.path.join(dirPath, file)
+                                    metadata = gdal.Info(filePath)
+                                    if metadata == None:
+                                        continue
+                                    file_month = utils.extract_sensing_month(metadata)
+                                    if file_month == month:
+                                        monthly_images.append(filePath)
+    return monthly_images
 
 if __name__ == '__main__':
     img_paths = ranking.create_list_of_fileshdf5()

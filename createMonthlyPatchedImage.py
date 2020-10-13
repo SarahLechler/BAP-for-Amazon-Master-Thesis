@@ -49,7 +49,7 @@ def list_index(index, monthly_images):
     return index_list
 
 
-def main(month, year, foldername, tile, indices):
+def main(month, year, foldername, tile, indices, overwrite):
     monthly_images = get_images_of_month(month, year, foldername, tile)
     bap_stack = []
     for image in monthly_images:
@@ -65,7 +65,7 @@ def main(month, year, foldername, tile, indices):
         return
     bpa_pixel = np.argmin(bap_array, axis=0)
     for index in indices:
-        if os.path.isfile(monthly_images[0][:-35] + "/" + index + "_BAP_" + str(month) + ".tif"):
+        if os.path.isfile(monthly_images[0][:-35] + "/" + index + "_BAP_" + str(month) + ".tif") and not overwrite:
             continue
         index_array = np.array(list_index(index, monthly_images))
         index_bpa = np.choose(bpa_pixel, index_array)

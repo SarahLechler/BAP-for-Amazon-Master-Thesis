@@ -75,9 +75,8 @@ def run_bap(year):
     indices = ["SAVI", "EVI", "NDVI", "GEMI"]
     tiles = ["21LYG", "21LYH"]
     for month in months:
-        for index in indices:
-            for tile in tiles:
-                createMonthlyPatchedImage.main(month, year, "../../../../scratch/tmp/s_lech05/hls_data", tile, index)
+        for tile in tiles:
+            createMonthlyPatchedImage.main(month, year, "../../../../scratch/tmp/s_lech05/hls_data", tile, indices)
 
 
 if __name__ == '__main__':

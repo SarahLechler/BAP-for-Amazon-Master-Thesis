@@ -49,11 +49,9 @@ def list_index(index, monthly_images):
     return index_list
 
 
-def main(month, year, foldername, tile, index):
+def main(month, year, foldername, tile, indices):
     monthly_images = get_images_of_month(month, year, foldername, tile)
     bap_stack = []
-    if os.path.isfile(monthly_images[0][:-35] + "/" + index + "_BAP_" + str(month) + ".tif"):
-        return
     for image in monthly_images:
         qa_layer_path = image[:-3] + "/QA_clear_sky.tif"
         for layer in os.listdir(image[:-3]):
@@ -66,11 +64,14 @@ def main(month, year, foldername, tile, index):
     if bap_array.size == 0:
         return
     bpa_pixel = np.argmin(bap_array, axis=0)
-    index_array = np.array(list_index(index, monthly_images))
-    index_bpa = np.choose(bpa_pixel, index_array)
-    utils.save_ind_img(monthly_images[0][:-35], index_bpa, index + "_BAP_" + str(month),
-                       monthly_images[0][:-3] + "/NDVI.tif", True)
-    print(f"BAP calculated for {month} {year} for {index}")
+    for index in indices:
+        if os.path.isfile(monthly_images[0][:-35] + "/" + index + "_BAP_" + str(month) + ".tif"):
+            continue
+        index_array = np.array(list_index(index, monthly_images))
+        index_bpa = np.choose(bpa_pixel, index_array)
+        utils.save_ind_img(monthly_images[0][:-35], index_bpa, index + "_BAP_" + str(month),
+                           monthly_images[0][:-3] + "/NDVI.tif", True)
+        print(f"BAP calculated for {month} {year} for {index}")
 
 
 if __name__ == "__main__":

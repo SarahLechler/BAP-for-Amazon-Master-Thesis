@@ -51,6 +51,9 @@ def list_index(index, monthly_images):
 
 def main(month, year, foldername, tile, indices, overwrite):
     monthly_images = get_images_of_month(month, year, foldername, tile)
+    for index in indices:
+        if os.path.isfile(monthly_images[0][:-35] + "/" + index + "_BAP_" + str(month) + ".tif") and not overwrite:
+            return
     bap_stack = []
     for image in monthly_images:
         qa_layer_path = image[:-3] + "/QA_clear_sky.tif"

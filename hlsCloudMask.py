@@ -10,10 +10,8 @@ def retrieve_cloud_mask_from_QA(hf_file):
         return
     if hf_file.find("L30") != -1:
         qa_layer_path = hf_dataset.GetSubDatasets()[10][0]
-        print("qa path: " + qa_layer_path)
     else:
         qa_layer_path = hf_dataset.GetSubDatasets()[13][0]
-        print("qa path: " + qa_layer_path)
     qa_layer = gdal.Open(qa_layer_path)
     qa_array = qa_layer.ReadAsArray()
     valid_pixel = [0, 4, 16, 20, 32, 36, 48, 52, 64, 68, 80, 84, 96,
@@ -36,7 +34,6 @@ def retrieve_cloud_mask_from_QA(hf_file):
 
 
 def plot_mask(mask):
-    print(mask)
     fig, ax = plt.subplots()
     im = ax.imshow(mask)
     plt.show()
@@ -58,7 +55,6 @@ def save_cloud_mask(path, cloud_mask):
     else:
         qa_layer_path = hdf_dataset.GetSubDatasets()[13][0]
     template_file = qa_layer_path
-    print(f"saved file to {out_path}")
     output = gdal_array.SaveArray(cloud_mask, out_path, format="GTiff", prototype=template_file)
     output = None
 

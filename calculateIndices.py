@@ -11,7 +11,6 @@ def applyCloudMask(ndvi, index_array):
     #mask out clouds based on ndvi since its the only one that gets it right
 
     clear_sky_array = np.where(np.isnan(ndvi), np.nan, index_array)
-    print(np.count_nonzero(np.isnan(clear_sky_array)))
     return clear_sky_array
 
 
@@ -158,7 +157,6 @@ def calculate_indices(bands):
     savi = calculate_savi(nir_band, red_band)
 
     path = bands[0][:-18] + ".hdfcloud_mask.tif"
-    print(path)
 
     evi = applyCloudMask(ndvi, evi)
     gemi = applyCloudMask(ndvi, gemi)

@@ -34,9 +34,7 @@ BAND_NAMES = {'S30': {'B01': 'Coastal_Aerosol',
 
 
 def create_clear_sky_image(path):
-    print(f"Start creating clear_sky images for file {path}")
     hls_dataset = gdal.Open(path)
-    print(f"cloud mask path: {path[:-3]}/cloud_mask.tif")
     cloud_mask = gdal.Open(path[:-3] + "/cloud_mask.tif")
     if not cloud_mask:
         return

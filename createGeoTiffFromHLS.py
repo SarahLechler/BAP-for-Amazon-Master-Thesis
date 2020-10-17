@@ -61,7 +61,6 @@ def create_singleband_geotif(dataset, hdf_path):
     else:
         return
     file_path = folder_path + '/' + path + '_' + band_path + '.tif'
-    print("saved to: " + file_path)
     if os.path.isfile(file_path):
         return
     gdal.Translate(file_path, dataset, options=[("-of"), ("GTiff")])
@@ -78,8 +77,8 @@ def create_multiband_geotif(path):
     if not (os.path.isdir(path[:-3])):
         os.mkdir(path[:-3])
     for dataset in subdatasets:
-        print("starting translating")
         create_singleband_geotif(dataset[0], path)
+    print(f"created geotiffs for  {path}")
     hdf_dataset = None
 
 

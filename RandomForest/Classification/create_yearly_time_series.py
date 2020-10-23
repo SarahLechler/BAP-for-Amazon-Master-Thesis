@@ -2,7 +2,7 @@ import numpy as np
 import os
 from osgeo import gdal
 
-directoryPath = "../hls_data"
+directoryPath = "../../../../scratch/tmp/s_lech05/hls_data"
 
 
 def extract_sensing_month(filepath):
@@ -37,18 +37,36 @@ def get_indice_img_paths(indice_name, tile_name):
     return filePathArray
 
 
-def get_pixel_value_array(img_array, rows, columns):
-    time_series_array = np.empty([ rows, columns,len(img_array)])
-    for img_index, img_path in enumerate(img_array, start=0):
+def get_pixel_value_array(img_array):
+    first_data = gdal.Open(img_array[0])
+    time_series_array = first_data.ReadAsArray()
+    for img_path in img_array[1:]:
         data = gdal.Open(img_path)
         data_array = data.ReadAsArray()
+        np.vstack(time_series_array, data_array)
+    """for img_index, img_path in enumerate(img_array, start=0):
+        data = gdal.Open(img_path)
+        data_array = data.ReadAsArray()
+
         for lat_index, lat_array in enumerate(data_array, start=0):
             for long_index, pixel in enumerate(lat_array, start=0):
                 if (lat_index > rows - 1 or long_index > columns - 1):
                     break
-                time_series_array[lat_index][long_index][img_index] = pixel
+                time_series_array[img_index][lat_index][long_index] = pixel"""
     return time_series_array
 
+def get_indice_bap_img_paths(index, tile, directoryPath):
+    yearly_images = []
+    for item in os.listdir(directoryPath):
+        tilePath = os.path.join(directoryPath, item)
+        if os.path.isdir(tilePath) and item == tile:
+            for year_folder in os.listdir(tilePath):
+                year_path = os.path.join(tilePath, year_folder)
+                for index_bap_files in os.listdir(year_path):
+                    if index_bap_files.endswith(".tif") and index in index_bap_files:
+                        index_path = os.path.join(year_path, index_bap_files)
+                        yearly_images.append(index_path)
+    return yearly_images
 
 def save_time_series(time_series, path):
     np.save(path, time_series)
@@ -64,6 +82,14 @@ input:  index name String (NDVI, RNSDI, SAVI, GEMI EVI)
 
 
 def create_time_series(name, tile, portion):
+    if bap:
+        paths = get_indice_bap_img_paths(name, tile, "hls_dataset")
+    else:
+        paths = get_indice_img_paths(name, tile)
+    sortedImgPaths = sortImgPahts(paths)
+    time_series = get_pixel_value_array(sortedImgPaths)
+    print(f"Finish creating time_series for tile {tile} and index {name}")
+    return time_series
     path = get_indice_img_paths(name, tile)
     time_series = get_pixel_value_array(path, portion[0], portion[1])
     print(f"Finish creating time_series for tile {tile} and index {name} and has a shape of {time_series.shape}" )

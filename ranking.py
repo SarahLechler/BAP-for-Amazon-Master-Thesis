@@ -68,10 +68,9 @@ def group_images_per_month(file_path_array):
 
     for file in file_path_array:
         print(f"working with file {file}")
-        file_metadata = gdal.Info(file)
-        year = utils.extract_sensing_year(file_metadata)
-        month = utils.extract_sensing_month(file_metadata)
-        if file_metadata.find("21LYH") != -1:
+        year = utils.extract_sensing_year_from_filename(file)
+        month = utils.extract_sensing_month_from_filename(file)
+        if "21LYH" in file:
             if year == "2013":
                 if not monthly_img2013H[month - 1]:
                     monthly_img2013H[month - 1] = [file]
@@ -102,7 +101,7 @@ def group_images_per_month(file_path_array):
                     monthly_img2018H[month - 1] = [file]
                 else:
                     monthly_img2018H[month - 1].append(file)
-        if file_metadata.find("21LYG") != -1:
+        if "21LYG" in file:
             if year == "2013":
                 if not monthly_img2013G[month - 1]:
                     monthly_img2013G[month - 1] = [file]
@@ -141,17 +140,15 @@ def group_images_per_month(file_path_array):
 
 def create_cloud_ranking(imgArray):
     if imgArray != []:
-        file_metadata = gdal.Info(imgArray[0])
-        cloud_coverage = utils.extract_cloud_coverage(file_metadata)
-        spatial_coverage = utils.extract_spatial_coverage(file_metadata)
+        cloud_coverage = utils.extract_cloud_coverage(imgArray[0])
+        spatial_coverage = utils.extract_spatial_coverage(imgArray[0])
         coverage = spatial_coverage - cloud_coverage
         best_path = imgArray[0]
     else:
         return
     for img in imgArray:
-        img_metadata = gdal.Info(img)
-        new_cloud_coverage = utils.extract_cloud_coverage(img_metadata)
-        new_spatial_coverage = utils.extract_spatial_coverage(img_metadata)
+        new_cloud_coverage = utils.extract_cloud_coverage(img)
+        new_spatial_coverage = utils.extract_spatial_coverage(img)
         new_coverage = new_spatial_coverage - new_cloud_coverage
         if new_coverage > coverage:
             coverage = new_coverage

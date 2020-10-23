@@ -120,11 +120,11 @@ def save_ind_img(path, ind, name, template_file):
     if (os.path.isfile(out_path)):
         return
     # print(f"saved file to {out_path}")
-    ind_output = gdal_array.SaveArray(ind, out_path, format="GTiff", prototype=template_file)
+    ind_output = gdal_array.SaveArray(ind, out_path, format="GTiff", prototype=gdal.Open(template_file))
     ind_output = None
 
 
-def calculate_indices(bands):
+def calculate_indices(bands, tile):
     # get specific bands
     if not bands:
         return
@@ -163,10 +163,11 @@ def calculate_indices(bands):
     savi = applyCloudMask(ndvi, savi)
 
     # save indices img
-    save_ind_img(bands[0][:-17], ndvi, "NDVI", bands[3])
-    save_ind_img(bands[0][:-17], evi, "EVI", bands[3])
-    save_ind_img(bands[0][:-17], gemi, "GEMI", bands[3])
-    save_ind_img(bands[0][:-17], savi, "SAVI", bands[3])
+    metadata = gdal.Info(bands[0])
+    utils.save_ind_img(bands[0][:-18], ndvi, "NDVI", tile, True, metadata)
+    utils.save_ind_img(bands[0][:-18], evi, "EVI", tile, True, metadata)
+    utils.save_ind_img(bands[0][:-18], gemi, "GEMI", tile, True, metadata)
+    utils.save_ind_img(bands[0][:-18], savi, "SAVI", tile, True, metadata)
 
 def index_creation(path):
     if not path:

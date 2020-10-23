@@ -21,6 +21,8 @@ import matplotlib.pyplot as plt
 # import cv2
 from osgeo import gdal_array
 
+import utils
+
 directoryPath = "/home/Usuario/Documents/SatelliteImages"
 
 filePathArray = []
@@ -44,22 +46,8 @@ def createlistoffiles():
                                     filePath = os.path.join(dirPath, file)
                                     filePathArray.append(filePath)
 
-
-def extract_cloud_coverage(metadata):
-    cc_index = metadata.find("cloud_coverage")
-    if cc_index != -1:
-        cloud_coverage = metadata[cc_index + 15:cc_index + 19]
-        return int(cloud_coverage)
-
-def extract_spatial_coverage(metadata):
-    cc_index = metadata.find("spatial_coverage")
-    if cc_index != -1:
-        spatial_coverage = metadata[cc_index + 17:cc_index + 19]
-        return int(spatial_coverage)
-
 def clear_sky(path):
-    file_metadata = gdal.Info(path)
-    cloud_coverage = extract_cloud_coverage(file_metadata)
+    cloud_coverage = utils.extract_cloud_coverage(path)
     if cloud_coverage is None:
         return
     if cloud_coverage == 0:  # no clouds calculated for image

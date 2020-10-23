@@ -14,21 +14,24 @@ inout:  index name String (NDVI, RNSDI, SAVI, GEMI EVI)
 
 """
 
-def createROIImage(index, path, year):
+def createROIImage(path, year, tile):
+    print(f"creating ROI images for {year} for the tile {tile}")
     # 1) opening the shapefile
     # First we will open our raster image, to understand how we will want to rasterize our vector
-    raster_ds = gdal.Open(path+index+'.tif', gdal.GA_ReadOnly)
+    raster_ds = gdal.Open(f'{path}/{year}/NDVI_BAP_7.tif', gdal.GA_ReadOnly) #take july image
 
     # Fetch projection and extent
     proj = raster_ds.GetProjectionRef()
     ext = raster_ds.GetGeoTransform()
-    source_ds = ogr.Open('trainingData/21LYG'+year+'_trainingData.shp')
+    ds_data_path = f'trainingData/{tile}{year}_trainingData.shp'
+    print(ds_data_path)
+    source_ds = ogr.Open(ds_data_path)
     source_layer = source_ds.GetLayer()
-
+    spatialRef = source_layer.GetSpatialRef()
     # 2) Creating the destination raster data source
 
     target_ds = gdal.GetDriverByName('GTiff').Create(
-        path + 'training_data'+index+'.gtif', 3660, 3660, 1,
+        path + 'training_data_roi.gtif', 3660, 3660, 1,
         gdal.GDT_Float32)  ##COMMENT 2
 
     target_ds.SetGeoTransform(ext)  # COMMENT 3
@@ -49,7 +52,7 @@ def createROIImage(index, path, year):
     else:
         print("Success")
 
-    roi_ds = gdal.Open(path + 'training_data'+index+'.gtif', gdal.GA_ReadOnly)
+    roi_ds = gdal.Open(path + 'training_data_roi.gtif', gdal.GA_ReadOnly)
     roi = roi_ds.GetRasterBand(1).ReadAsArray()
 
     # How many pixels are in each class?

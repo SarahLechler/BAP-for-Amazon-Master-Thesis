@@ -37,10 +37,9 @@ def get_aerosol_quality(pixel):
     return aerosol_value_int
 
 
-# getDate and distance to target date
+# getDate and distance to target date from qa_layer path
 def get_distance_to_target_date(path, target_date):
-    metadata = gdal.Info(path)
-    sensing_date = utils.extract_sensing_date(metadata)
+    sensing_date = utils.extract_sensing_date(gdal.Info(path))
     distance_to_target_date = abs(target_date - sensing_date)
     return distance_to_target_date.days
 
@@ -86,7 +85,7 @@ def main(path, qa_path, target_date):
         else:
             bap_score = get_bap_score(pixel, qa_path, distance_target_date)
             bap_array[index] = bap_score
-    print(bap_array)
+    img_array = None
     return bap_array
 
 

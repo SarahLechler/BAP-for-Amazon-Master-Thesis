@@ -26,7 +26,7 @@ def get_images_of_month(month, year, directoryPath, tile):
                         year_path = os.path.join(tilePath, year_folder)
                         for hlsDirectory in os.listdir(year_path):
                             dirPath = os.path.join(year_path, hlsDirectory)
-                            if os.path.isdir(dirPath):
+                            if os.path.isdir(dirPath): #and "S30" in dirPath
                                 for file in os.listdir(dirPath):
                                     if file.endswith('.h5'):
                                         filePath = os.path.join(dirPath, file)
@@ -60,18 +60,17 @@ def main(month, year, foldername, tile, indices, overwrite):
         for layer in os.listdir(image[:-3]):
             if "QA" in layer and "clear" in layer:
                 qa_layer_path = os.path.join(image[:-3], layer)
-        day = utils.extract_sensing_day(gdal.Info(qa_layer_path))
         bap_array = bap_score.main(image, qa_layer_path, datetime.datetime(year, month, 15))
         bap_stack.append(bap_array)
     bap_array = np.array(bap_stack)
     if bap_array.size == 0:
         return
     bpa_pixel = np.argmin(bap_array, axis=0)
+    day = utils.extract_sensing_day(gdal.Info(qa_layer_path))
     for index in indices:
-        if os.path.isfile(f"{monthly_images[0][:-35]}/{index}_BAP_d{day}m{month}y{year}.tif") and not overwrite:
+        if not overwrite and os.path.isfile(f"{monthly_images[0][:-35]}/{index}_BAP_d{day}m{month}y{year}.tif"):
             return
         index_array = np.array(list_index(index, monthly_images))
-        print(f"BAP array size {bpa_pixel.shape} and index-array size {index_array.shape}")
         index_bpa = np.choose(bpa_pixel, index_array)
         utils.save_ind_img(monthly_images[0][:-35], index_bpa, index + "_BAP_", tile, True, gdal.Info(qa_layer_path))
         print(f"BAP calculated for {month} {year} for {index}")

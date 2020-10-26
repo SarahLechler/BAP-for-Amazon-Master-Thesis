@@ -36,6 +36,12 @@ def get_aerosol_quality(pixel):
     aerosol_value_int = int(aerosol_value, 2)
     return aerosol_value_int
 
+def get_sensor_score(path):
+    if "S30" in path:
+        return 0
+    if "L30" in path:
+        return 10
+
 
 # getDate and distance to target date from qa_layer path
 def get_distance_to_target_date(path, target_date):
@@ -63,19 +69,19 @@ def covered_by_cloud(pixel):
         return 0
 
 
-def get_bap_score(pixel, path, distance_to_target_date):
+def get_bap_score(pixel, path, distance_to_target_date, sensor_score):
     cloud_covered = covered_by_cloud(pixel)
     distance_to_cloud = get_distance_to_cloud(pixel)
     aerosol_quality = get_aerosol_quality(pixel)
     # print(f"cloud distance:{distance_to_cloud}, aerosol: {aerosol_quality}, date:{distance_to_target_date} cloud: {cloud_covered}")
-    bap = distance_to_cloud + aerosol_quality + distance_to_target_date + cloud_covered
+    bap = distance_to_cloud + aerosol_quality + distance_to_target_date + cloud_covered + sensor_score
     return bap
 
 
 def main(path, qa_path, target_date):
     print("start calculating bap for image: " + path)
-    metadata = gdal.Info(path)
     distance_target_date = get_distance_to_target_date(path, target_date)
+    sensor_score = get_sensor_score(path)
     img = gdal.Open(qa_path)
     img_array = np.array(img.ReadAsArray())
     bap_array = np.empty(img_array.shape)
@@ -83,8 +89,10 @@ def main(path, qa_path, target_date):
         if pixel == None or pixel == np.nan or pixel == 0:
             bap_array[index] = 260
         else:
-            bap_score = get_bap_score(pixel, qa_path, distance_target_date)
+            bap_score = get_bap_score(pixel, qa_path, distance_target_date, sensor_score)
             bap_array[index] = bap_score
+    distance_target_date=None
+    img=None
     img_array = None
     return bap_array
 

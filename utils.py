@@ -107,8 +107,11 @@ driver = gdal.GetDriverByName('GTiff')
 
 
 def extract_cloud_coverage(file_path):
-    fileindex = file_path.find["v1.4/"]
-    metadata_file_path = file_path[:fileindex+5]+".h5"
+    if file_path == None:
+        return 100
+    fileindex = file_path.find("v1.4/")
+    metadata_file_path = file_path[:fileindex+4]+".h5"
+    print(metadata_file_path)
     metadata = gdal.Info(metadata_file_path)
     cc_index = metadata.find("cloud_coverage")
     if cc_index != -1:
@@ -117,8 +120,10 @@ def extract_cloud_coverage(file_path):
 
 
 def extract_spatial_coverage(file_path):
-    fileindex = file_path.find["v1.4/"]
-    metadata_file_path = file_path[:fileindex+5]+".h5"
+    if file_path == None:
+        return 0
+    fileindex = file_path.find("v1.4/")
+    metadata_file_path = file_path[:fileindex+4]+".h5"
     metadata = gdal.Info(metadata_file_path)
     cc_index = metadata.find("spatial_coverage")
     if cc_index != -1:

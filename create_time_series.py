@@ -5,7 +5,7 @@ import datetime
 import utils
 import ranking
 
-directoryPath = "./Images"
+directoryPath = "../../../../scratch/tmp/s_lech05/hls_data/"
 
 
 def get_indice_img_paths(indice_name, tile_name):
@@ -32,8 +32,9 @@ def get_indice_img_paths(indice_name, tile_name):
     index_images = ranking.group_images_per_month(filePathArray)
     monthly_images = []
     for images in index_images:
-        ranking_results = ranking.create_cloud_ranking(images)
-        monthly_images.append(ranking_results)
+        for months in images:
+            ranking_results = ranking.create_cloud_ranking(months)
+            monthly_images.append(ranking_results)
     return monthly_images
 
 
@@ -88,7 +89,7 @@ def get_indice_bap_img_paths(index, tile, directoryPath):
                             index_path = os.path.join(year_path, index_bap_files)
                             month = utils.extract_sensing_month_from_filename(index_path)
                             year = utils.extract_sensing_year_from_filename(index_path)
-                            if (month < 7 and year == 2020) or year != 2020 or (
+                            if (month < 8 and year == 2020) or year != 2020 or year != 2013 or (
                                     month > 7 and year == 2013):
                                 bap_images.append(index_path)
     return bap_images

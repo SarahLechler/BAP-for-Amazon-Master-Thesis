@@ -7,26 +7,27 @@ from bfast import BFASTMonitor
 from bfast.utils import crop_data_dates
 import matplotlib.pyplot as plt
 import matplotlib
-
 import pandas as pd
 import bfastSingle
 
 
 def run_bfast(indice_array):
+    print("hooray")
     # parameters
     k = 3
     freq = 30
     trend = True
     hfrac = 0.25
     level = 0.05
-    start_hist = datetime(2013, 4, 1)  # no data for the first three months of 2013
-    start_monitor = datetime(2016, 7, 1)
-    end_monitor = datetime(2018, 12, 31)
+    start_hist = datetime(2013, 8, 1)
+    start_monitor = datetime(2018, 7, 1)
+    end_monitor = datetime(2020, 8, 1)
 
-    dates = pd.date_range('2013-04-01', '2018-7-31', freq='MS')
+    dates = pd.date_range('2013-08-01', '2020-07-01', freq='MS')
     dates2 = [pd.to_datetime(date) for date in dates]
     indice_array = numpy.where(numpy.isnan(indice_array), -9999, indice_array)
-    data, dates2 = crop_data_dates(indice_array, dates2, start_hist, end_monitor)
+    data, dates = crop_data_dates(indice_array, dates2, start_hist, end_monitor)
+    print(indice_array.shape)
     # data = data * 10000
     data = data.astype(int)
     while len(dates2) > data.shape[0]:
@@ -48,10 +49,9 @@ def run_bfast(indice_array):
         level=level,
         backend='python',
         verbose=1
-
     )
     # data = data[:, 2330:3000, :]
-    model.fit(data, dates2, nan_value=-9999)
+    model.fit(data, dates, n_chunks=5, nan_value=-9999)
     # bfastSingle.fit_single(data, dates2, model)
 
     # visualize results

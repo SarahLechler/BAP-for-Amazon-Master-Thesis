@@ -9,7 +9,6 @@ import utils
 def applyCloudMask(ndvi, index_array):
 
     #mask out clouds based on ndvi since its the only one that gets it right
-
     clear_sky_array = np.where(np.isnan(ndvi), np.nan, index_array)
     return clear_sky_array
 
@@ -169,13 +168,57 @@ def calculate_indices(bands, tile):
     utils.save_ind_img(bands[0][:-18], gemi, "GEMI", tile, True, metadata)
     utils.save_ind_img(bands[0][:-18], savi, "SAVI", tile, True, metadata)
 
-def index_creation(path):
+
+def calculate_indices_fromh5(path, tile):
+    hf_dataset = gdal.Open(path)
+    if not hf_dataset:
+        return
+    # get specific bands
+    print(path)
+    if "S30" in path:
+        nir_band = gdal.Open(hf_dataset.GetSubDatasets()[8][0])
+        nir_band = nir_band.ReadAsArray()
+
+        red_band = gdal.Open(hf_dataset.GetSubDatasets()[3][0])
+        red_band = red_band.ReadAsArray()
+
+        blue_band = gdal.Open(hf_dataset.GetSubDatasets()[1][0])
+        blue_band = blue_band.ReadAsArray()
+
+    if "L30" in path:
+        nir_band = gdal.Open(hf_dataset.GetSubDatasets()[4][0])
+        nir_band = nir_band.ReadAsArray()
+
+        red_band = gdal.Open(hf_dataset.GetSubDatasets()[3][0])
+        red_band = red_band.ReadAsArray()
+
+        blue_band = gdal.Open(hf_dataset.GetSubDatasets()[1][0])
+        blue_band = blue_band.ReadAsArray()
+
+    # calculate indices
+    ndvi = calculate_ndvi(nir_band, red_band)
+    evi = calculate_evi(nir_band, red_band, blue_band)
+    gemi = calculate_gemi(nir_band, red_band)
+    savi = calculate_savi(nir_band, red_band)
+    print(f'finished calculating indices for {path}')
+
+    # save indices img
+    metadata = gdal.Info(path)
+    utils.save_ind_img(path[:-3], ndvi, "NDVI", tile, True, metadata)
+    utils.save_ind_img(path[:-3], evi, "EVI", tile, True, metadata)
+    utils.save_ind_img(path[:-3], gemi, "GEMI", tile, True, metadata)
+    utils.save_ind_img(path[:-3], savi, "SAVI", tile, True, metadata)
+
+
+
+def index_creation(path, tile):
     if not path:
         return
-    folder_path = path[:-3]
+    calculate_indices_fromh5(path, tile)
+    """folder_path = path[:-3]
     bands_list = os.listdir(folder_path)
     band_paths = []
     for band in bands_list:
         band_path = os.path.join(folder_path, band)
-        band_paths.append(band_path)
-    calculate_indices(band_paths)
+        band_paths.append(band_path)"""
+

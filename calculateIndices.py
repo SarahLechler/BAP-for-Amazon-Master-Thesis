@@ -7,9 +7,18 @@ import utils
 
 
 def applyCloudMask(ndvi, index_array):
-
-    #mask out clouds based on ndvi since its the only one that gets it right
+    # mask out clouds based on ndvi since its the only one that gets it right
     clear_sky_array = np.where(np.isnan(ndvi), np.nan, index_array)
+    return clear_sky_array
+
+
+def mask_out_clouds(dataset_array, path):
+    cloud_mask = gdal.Open(path[:-3] + "/cloud_mask.tif")
+    cloud_mask_array = cloud_mask.ReadAsArray()
+    invert_cloud_mask_array = np.zeros_like(cloud_mask_array)
+    invert_cloud_mask_array[cloud_mask_array == 0] = 1
+    invert_cloud_mask_array[cloud_mask_array == 1] = 0
+    clear_sky_array = dataset_array * invert_cloud_mask_array
     return clear_sky_array
 
 
@@ -44,6 +53,14 @@ def calculate_evi(nir, red, blue):
     return evi
 
 
+def calculate_ndmi(nir, swir):
+    ndmi = (nir - swir) / (nir + swir)
+    ndmi = np.where(ndmi > 1, 1, ndmi)
+    ndmi = np.where((ndmi < -1) & (ndmi != -999), -1, ndmi)
+
+    return ndmi
+
+
 '''
 calculate GEMI
 Global Environment Monitoring Index = GEMI = (n(1−0.25n)−(RED−0.125)(1−RED)) with 
@@ -72,6 +89,10 @@ def calculate_savi(nir, red):
     savi = np.where(savi > 1, 1, savi)
     savi = np.where((savi < 0) & (savi != -999), 0, savi)
     return savi
+
+# calculate tesseled cap wetness
+def calculate_TCwetness(blue, green, red, nir, swir1, swir2):
+    tcw = 0.0315 * blue + 0.2021 * green + 0.3102 * red + 0.1594 * nir - 0.6806 * swir1 - 0.6109 * swir2
 
 
 '''
@@ -154,6 +175,7 @@ def calculate_indices(bands, tile):
     evi = calculate_evi(nir_band, red_band, blue_band)
     gemi = calculate_gemi(nir_band, red_band)
     savi = calculate_savi(nir_band, red_band)
+    ndmi = calculate_ndmi(nir_band, swir_band)
 
     path = bands[0][:-18] + ".hdfcloud_mask.tif"
 
@@ -185,6 +207,9 @@ def calculate_indices_fromh5(path, tile):
         blue_band = gdal.Open(hf_dataset.GetSubDatasets()[1][0])
         blue_band = blue_band.ReadAsArray()
 
+        swir_band = gdal.Open(hf_dataset.GetSubDatasets()[10][0])
+        swir_band = swir_band.ReadAsArray()
+
     if "L30" in path:
         nir_band = gdal.Open(hf_dataset.GetSubDatasets()[4][0])
         nir_band = nir_band.ReadAsArray()
@@ -195,20 +220,24 @@ def calculate_indices_fromh5(path, tile):
         blue_band = gdal.Open(hf_dataset.GetSubDatasets()[1][0])
         blue_band = blue_band.ReadAsArray()
 
+        swir_band = gdal.Open(hf_dataset.GetSubDatasets()[6][0])
+        swir_band = swir_band.ReadAsArray()
+
     # calculate indices
     ndvi = calculate_ndvi(nir_band, red_band)
     evi = calculate_evi(nir_band, red_band, blue_band)
     gemi = calculate_gemi(nir_band, red_band)
     savi = calculate_savi(nir_band, red_band)
-    print(f'finished calculating indices for {path}')
+    ndmi = calculate_ndmi(nir_band, swir_band)
 
+    print(f'finished calculating indices for {path}')
     # save indices img
     metadata = gdal.Info(path)
     utils.save_ind_img(path[:-3], ndvi, "NDVI", tile, True, metadata)
     utils.save_ind_img(path[:-3], evi, "EVI", tile, True, metadata)
     utils.save_ind_img(path[:-3], gemi, "GEMI", tile, True, metadata)
     utils.save_ind_img(path[:-3], savi, "SAVI", tile, True, metadata)
-
+    utils.save_ind_img(path[:-3], ndmi, "NDMI", tile, True, metadata)
 
 
 def index_creation(path, tile):
@@ -221,4 +250,3 @@ def index_creation(path, tile):
     for band in bands_list:
         band_path = os.path.join(folder_path, band)
         band_paths.append(band_path)"""
-

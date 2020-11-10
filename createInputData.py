@@ -10,7 +10,7 @@ def sampling_k_elements(group, number_of_samples=10):
     return group.sample(number_of_samples)
 
 
-def plotSampleData(X, year, index, y):
+def plotSampleData(X, year, index, y, path):
 
     # Fix Y than concatenate
     dados = None
@@ -21,9 +21,9 @@ def plotSampleData(X, year, index, y):
            'May/2018', 'Jun/2018', 'Jul/2018', 'Class']
     # create dataframe
     df = pd.DataFrame(dados, columns=col)
-    # replace labels
+    # Labels: 1 - Forest; 2- Pasture; 3 - Agriculture 4- Deforestation
     df['Class'] = df['Class'].replace(to_replace=[1, 2, 3, 4],
-                                      value=["Agriculture", "Pasture", "Forest", "Deforestation"])
+                                      value=["Forest", "Pasture", "Agriculture", "Deforestation"])
 
     """balanced = df.groupby('Class').apply(sampling_k_elements).drop('Class', axis=1).reset_index().drop('level_1',
                                                                                                        axis=1)"""
@@ -38,19 +38,14 @@ def plotSampleData(X, year, index, y):
         plt.title(f"TS for year: {year} and index {index}")
         plt.ylabel(f'{index} value')
         plt.xlabel('Month of Prodes Year')
-        plt.savefig(f"../../../../scratch/tmp/s_lech05/hls_data/plots/ts{year}{index}_lineplot_randomsample_withNAN")
+        plt.savefig(f"{path}ts{year}{index}_lineplot_randomsample_withNAN")
 
 
 def createData(ts, path, index, year):
     # Read in our image and ROI image
     img_ds = ts
-    """ gdal.Open(path+index+'.tif', gdal.GA_ReadOnly)"""
-    roi_ds = gdal.Open(path + 'training_data' + index + '.gtif', gdal.GA_ReadOnly)
+    roi_ds = gdal.Open(path + 'training_data_roi' + str(year) + '.tif', gdal.GA_ReadOnly)
     img = img_ds
-    """np.zeros_like(img_ds)
-    for b in range(img.shape[2]):
-        img[:, :, b] = img_ds[:, :, b]"""
-    # TODO: control the roi raster (really small) --> maybe try out different year?
     roi = roi_ds.GetRasterBand(1).ReadAsArray()
 
     # Find how many non-zero entries we have -- i.e. how many training data samples?
@@ -61,6 +56,7 @@ def createData(ts, path, index, year):
     labels = np.unique(roi[roi > 0])
     print('The training data include {n} classes: {classes}'.format(n=labels.size,
                                                                     classes=labels))
+    print(f"The roi has a shape of {roi.shape} and the ts {img.shape}")
     # We will need a "X" matrix containing our features, and a "y" array containing our labels
     #     These will have n_samples rows
     #     In other languages we would need to allocate these and them loop to fill them, but NumPy can be faster
@@ -68,7 +64,7 @@ def createData(ts, path, index, year):
     X = img[roi > 0, :]  # .T  # map labels to coresponding pixels
     y = roi[roi > 0]
 
-    plotSampleData(X, year, index, y)
+    plotSampleData(X, year, index, y, path)
     X = np.where(np.isnan(X), -999, X)
 
     return X, y

@@ -14,7 +14,7 @@ import pandas as pd
 import sys
 
 
-def create_prodes_layer():
+def create_prodes_layer(path, tile):
     """    prodes_path = "prodes_data/21LYH_prodes.shp"
     shp_driver = ogr.GetDriverByName("ESRI Shapefile")
     prodes_data = shp_driver.Open(prodes_path, 0)
@@ -23,12 +23,13 @@ def create_prodes_layer():
     # prodes_data = None"""
 
     # First we will open our raster image, to understand how we will want to rasterize our vector
-    raster_ds = gdal.Open("../Images/21LYH/GEMI21LYH_breaks_2018_bfast_tif", gdal.GA_ReadOnly)
+    ds_path = f"{path}/template_file_{tile}.tif"
+    raster_ds = gdal.Open(ds_path, gdal.GA_ReadOnly)
 
     # Fetch projection and extent
     proj = raster_ds.GetProjectionRef()
     ext = raster_ds.GetGeoTransform()
-    prodes_path = 'prodes_data/21LYH_prodes_new.shp'
+    prodes_path = f'validationData/{tile}_prodes2019.shp'
     shp_driver = ogr.GetDriverByName("ESRI Shapefile")
     source_ds = shp_driver.Open(prodes_path, 0)
     layer = source_ds.GetLayer()
@@ -37,7 +38,7 @@ def create_prodes_layer():
     # 2) Creating the destination raster data source
 
     target_ds = gdal.GetDriverByName('GTiff').Create(
-        'prodes_data/21LYH_prodes.gtif', 3660, 3660, 1,
+        f'validationData/{tile}_prodes.tif', 3660, 3660, 1,
         gdal.GDT_Float32)  ##COMMENT 2
 
     target_ds.SetGeoTransform(ext)  # COMMENT 3
@@ -58,10 +59,10 @@ def create_prodes_layer():
     else:
         print("Success")
 
-    prodes_ds = gdal.Open('prodes_data/21LYH_prodes.gtif', gdal.GA_ReadOnly)
+    prodes_ds = gdal.Open(f'validationData/{tile}_prodes.tif', gdal.GA_ReadOnly)
     prodes = prodes_ds.GetRasterBand(1).ReadAsArray()
     prodes = np.where(prodes != -9999, 1, 255).astype(np.float).ravel()
-    print(f"amount of deforestation pixel in prodes: {np.unique(prodes, return_counts ='true')}")
+    print(f"amount of deforestation pixel in prodes: {np.unique(prodes, return_counts='true')}")
     return prodes
 
 
@@ -85,8 +86,11 @@ def extract_extent(index):
     return wkt
 
 
-def get_bfastlayer(index):
-    bfast_path = f"../Images/21LYH/{index}21LYH_breaks_2018_bfast_tif"
+def get_bfastlayer(tile, index, bap):
+    if bap:
+        bfast_path = f"../Ergebnisse_BFAST/{index}{tile}_breaks_2019_BAP_bfast.tif"
+    else:
+        bfast_path = f"../Ergebnisse_BFAST/{index}{tile}_breaks_2019_bfast.tif"
     print(f"working with file: {bfast_path}")
     bfast_md = gdal.Info(bfast_path)
     dataset = gdal.Open(bfast_path)
@@ -95,18 +99,16 @@ def get_bfastlayer(index):
     rows = dataset.RasterYSize
     cols = dataset.RasterXSize
 
-
     # create the output image
     driver = dataset.GetDriver()
     # print driver
-    outDs = driver.Create(f'21LYH{index}21LYH_breaks_2018_bfast_tifArray', cols, rows, 1, GDT_Int32)
+    outDs = driver.Create(f'{tile}{index}_breaks_2019_bfast_tifArray', cols, rows, 1, GDT_Int32)
     if outDs is None:
         print
         'Could not create reclass_40.tif'
         sys.exit(1)
 
     outBand = outDs.GetRasterBand(1)
-
 
     # write the data
     outBand.WriteArray(bfast_array, 0, 0)
@@ -123,8 +125,11 @@ def get_bfastlayer(index):
     return bfast_md, bfast_array
 
 
-def get_RFlayer(index):
-    rf_path = f"../Images/21LYH/2018/L30/HLS.L30.T21LYH.2018019.v1.4/classified_{index}2018.gtif"
+def get_RFlayer(tile, index, bap):
+    if bap:
+        rf_path = f"../ErgebnisseRF/{tile}/classified_{index}2019.gtif"
+    else:
+        rf_path = f"../ErgebnisseRF/{tile}/classified_Months{index}2019.gtif"
     print(f"working with file: {rf_path}")
     rf_md = gdal.Info(rf_path)
     dataset = gdal.Open(rf_path)
@@ -135,18 +140,15 @@ def get_RFlayer(index):
     rows = dataset.RasterYSize
     cols = dataset.RasterXSize
 
-
     # create the output image
     driver = dataset.GetDriver()
     # print driver
-    outDs = driver.Create(f'21LYH{index}_2018_rf_tifArray', cols, rows, 1, GDT_Int32)
+    outDs = driver.Create(f'{tile}{index}_2019_rf_tifArray', cols, rows, 1, GDT_Int32)
     if outDs is None:
-        print
-        'Could not create reclass_40.tif'
+        print('Could not create reclass_40.tif')
         sys.exit(1)
 
     outBand = outDs.GetRasterBand(1)
-
 
     # write the data
     outBand.WriteArray(rf_array, 0, 0)
@@ -164,13 +166,13 @@ def get_RFlayer(index):
 
 
 def calc_accuracy_bfast(input):
-    bfast_layer = get_bfastlayer(input[0])[1]
-    """score = accuracy_score(input[1], bfast_layer)
+    bfast_layer = get_bfastlayer(input[2], input[0], input[3])[1]
+    score = accuracy_score(input[1], bfast_layer)
     p_score = precision_score(input[1], bfast_layer, average=None)
     binary_score = f1_score(input[1], bfast_layer, average=None)
     cm = confusion_matrix(input[1], bfast_layer)
     # Now the normalize the diagonal entries
-    man_accuracy = compare(input[1], bfast_layer)"""
+    man_accuracy = compare(input[1], bfast_layer)
     kappa_score = cohen_kappa_score(input[1], bfast_layer)
     data = {'y_Actual': input[1],
             'y_Predicted': bfast_layer
@@ -178,26 +180,25 @@ def calc_accuracy_bfast(input):
 
     df = pd.DataFrame(data, columns=['y_Actual', 'y_Predicted'])
 
-    pd_matrix = pd.crosstab(df['y_Actual'], df['y_Predicted'], rownames=['Actual'], colnames=['Predicted'], margins=True)
+    pd_matrix = pd.crosstab(df['y_Actual'], df['y_Predicted'], rownames=['Actual'], colnames=['Predicted'],
+                            margins=True)
     print(f"Using BFAST monitor with index: {input[0]}, the pd matrix is:\n {pd_matrix}")
     print(f"Using BFAST monitor with index: {input[0]}, the kappa score is:\n {kappa_score}")
 
-    """print(f"Using BFAST monitor with index: {input[0]}, the accuracy is: {score}")
+    print(f"Using BFAST monitor with index: {input[0]}, the accuracy is: {score}")
     print(f"Using BFAST monitor with index: {input[0]}, the precision is: {p_score}")
     print(f"Using BFAST monitor with index: {input[0]}, the binary accuracy is: {binary_score}")
     print(f"Using BFAST monitor with index: {input[0]}, the normalized confusion matrix is:\n {cm}")
     print(
-        f"Using BFAST monitor with index: {input[0]}, the maually calculated accuracy is: {man_accuracy}")"""
+        f"Using BFAST monitor with index: {input[0]}, the maually calculated accuracy is: {man_accuracy}")
 
 
 def calc_accuracy_rf(input):
-    rf_layer = get_RFlayer(input[0])[1]
-    """    score = accuracy_score(input[1], rf_layer)
+    rf_layer = get_RFlayer(input[2], input[0], input[3])[1]
+    score = accuracy_score(input[1], rf_layer)
     p_score = precision_score(input[1], rf_layer, average=None)
     binary_score = f1_score(input[1], rf_layer, average=None)
     cm = confusion_matrix(input[1], rf_layer)
-    # Now the normalize the diagonal entries
-    man_accuracy = compare(input[1], rf_layer)"""
     kappa_score = cohen_kappa_score(input[1], rf_layer)
 
     data = {'y_Actual': input[1],
@@ -206,16 +207,18 @@ def calc_accuracy_rf(input):
 
     df = pd.DataFrame(data, columns=['y_Actual', 'y_Predicted'])
 
-    pd_matrix = pd.crosstab(df['y_Actual'], df['y_Predicted'], rownames=['Actual'], colnames=['Predicted'], margins=True)
+    pd_matrix = pd.crosstab(df['y_Actual'], df['y_Predicted'], rownames=['Actual'], colnames=['Predicted'],
+                            margins=True)
 
-    print(f"Using RF monitor with index: {input[0]}, the pd matrix is:\n {pd_matrix}")
-    print(f"Using RF monitor with index: {input[0]}, the kappa score is:\n {kappa_score}")
+    print(f"Using RF with index: {input[0]} for the tile {input[2]}, the pd matrix is:\n {pd_matrix}")
+    print(f"Using RF with index: {input[0]} for the tile {input[2]}, the kappa score is:\n {kappa_score}")
 
-    """ print(f"Using RF with index: {input[0]}, the accuracy is: {score}")
-    print(f"Using RF monitor with index: {input[0]}, the precision is: {p_score}")
-    print(f"Using RF monitor with index: {input[0]}, the binary accuracy is: {binary_score}")
-    print(f"Using RF monitor with index: {input[0]}, the normalized confusion matrix is:\n {cm}")
-    print(f"Using RF monitor with index: {input[0]}, the maually calculated accuracy is: {man_accuracy}")"""
+    print(f"Using RF with index: {input[0]} for the tile {input[2]}, the accuracy is: {score}")
+    print(f"Using RF monitor with index: {input[0]} for the tile {input[2]}, the precision is: {p_score}")
+    print(f"Using RF monitor with index: {input[0]} for the tile {input[2]}, the binary accuracy is: {binary_score}")
+    print(
+        f"Using RF monitor with index: {input[0]} for the tile {input[2]}, the normalized confusion matrix is:\n {cm}")
+    """print(f"Using RF monitor with index: {input[0]}, the maually calculated accuracy is: {man_accuracy}")"""
 
 
 def compare(prodes, classification):
@@ -236,17 +239,23 @@ def compare(prodes, classification):
 
 
 if __name__ == "__main__":
-    prodes_layer = create_prodes_layer()
-    index_array = [["NDVI", prodes_layer], ["GEMI", prodes_layer], ["SAVI", prodes_layer], ["EVI", prodes_layer]]
+    tile = "21LYH"
+    path = f"../hls_dataset/BAPs/{tile}/"
+    bap = False
+    prodes_layer = create_prodes_layer(path, tile)
+    index_array = [["NDVI", prodes_layer, tile, bap], ["NDMI", prodes_layer, tile, bap],
+                   ["SAVI", prodes_layer, tile, bap],
+                   ["EVI", prodes_layer, tile, bap]]
     # accuracy Bfast
     pool = mp.Pool(2)
     resultBFAST = pool.imap(calc_accuracy_bfast, index_array)
+    resultBFAST = None
     pool.close()
     pool.join()
-   # accuracy RF
+    # accuracy RF
     pool = mp.Pool(2)
     resultRF = pool.imap(calc_accuracy_rf, index_array)
 
     pool.close()
     pool.join()
-
+    resultRF = None

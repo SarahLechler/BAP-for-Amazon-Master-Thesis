@@ -12,7 +12,7 @@ import bfastSingle
 
 
 def run_bfast(indice_array):
-    print("hooray")
+    print("starting Bfast Process")
     # parameters
     k = 3
     freq = 30
@@ -20,16 +20,19 @@ def run_bfast(indice_array):
     hfrac = 0.25
     level = 0.05
     start_hist = datetime(2013, 8, 1)
-    start_monitor = datetime(2018, 7, 1)
-    end_monitor = datetime(2020, 8, 1)
+    start_monitor = datetime(2019, 7, 1)
+    end_monitor = datetime(2020, 7, 31)
 
-    dates = pd.date_range('2013-08-01', '2020-07-01', freq='MS')
+    dates = pd.date_range('2013-08-01', '2020-07-31', freq='MS')
     dates2 = [pd.to_datetime(date) for date in dates]
+    nancount = numpy.count_nonzero(numpy.isnan(indice_array))
+    print(f"Timeseries has {nancount} NANs")
     indice_array = numpy.where(numpy.isnan(indice_array), -9999, indice_array)
+    indice_array = indice_array * 10000
+    indice_array = indice_array.astype(int)
     data, dates = crop_data_dates(indice_array, dates2, start_hist, end_monitor)
     print(indice_array.shape)
-    # data = data * 10000
-    data = data.astype(int)
+
     while len(dates2) > data.shape[0]:
         dates2.pop()
     if len(dates2) < data.shape[0]:

@@ -5,10 +5,9 @@ import datetime
 import utils
 import ranking
 
-directoryPath = "../../../../scratch/tmp/s_lech05/hls_data/"
 
 
-def get_indice_img_paths(indice_name, tile_name):
+def get_indice_img_paths(indice_name, tile_name, directoryPath):
     filePathArray = []
     for item in os.listdir(directoryPath):
         tilePath = os.path.join(directoryPath, item)
@@ -29,9 +28,10 @@ def get_indice_img_paths(indice_name, tile_name):
                                             if (month < 7 and year == 2020) or year != 2020 or (
                                                     month > 7 and year == 2013):
                                                 filePathArray.append(filePath)
-    index_images = ranking.group_images_per_month(filePathArray)
+    index_images = ranking.group_images_per_month(filePathArray, tile_name)
     monthly_images = []
     for images in index_images:
+        print(images)
         for months in images:
             ranking_results = ranking.create_cloud_ranking(months)
             monthly_images.append(ranking_results)
@@ -89,19 +89,23 @@ def get_indice_bap_img_paths(index, tile, directoryPath):
                             index_path = os.path.join(year_path, index_bap_files)
                             month = utils.extract_sensing_month_from_filename(index_path)
                             year = utils.extract_sensing_year_from_filename(index_path)
-                            if (month < 8 and year == 2020) or year != 2020 or year != 2013 or (
-                                    month > 7 and year == 2013):
+                            if (month > 8 and year == 2020) or (month < 7 and year == 2013):
+                                continue
+                            else:
                                 bap_images.append(index_path)
     return bap_images
 
 
 def create_time_series(name, tile, bap):
+    print("start calculating TS")
     if bap:
-        paths = get_indice_bap_img_paths(name, tile, "../../../../scratch/tmp/s_lech05/hls_data/")
+        paths = get_indice_bap_img_paths(name, tile, "/scratch/tmp/s_lech05/hls_data/") #"../../../../scratch/tmp/s_lech05/hls_data/"
     else:
-        paths = get_indice_img_paths(name, tile)
+        paths = get_indice_img_paths(name, tile, "/scratch/tmp/s_lech05/hls_data/")
     sortedImgPaths = sortImgPahts(paths)
     time_series = get_pixel_value_array(sortedImgPaths)
     print(f"Finish creating time_series for tile {tile} and index {name}")
+    nancount = np.count_nonzero(np.isnan(time_series))
+    print(f"It has {nancount} NAN values")
     sortedImgPaths = None
     return time_series

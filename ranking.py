@@ -2,7 +2,7 @@ from osgeo import gdal
 import os
 import utils
 
-directoryPath = "../../../../scratch/tmp/s_lech05/hls_data/"
+directoryPath = "/scratch/tmp/s_lech05/hls_data/"
 
 
 def create_list_of_files():
@@ -52,7 +52,7 @@ def create_list_of_fileshdf5():
     return filePathArray
 
 
-def group_images_per_month(file_path_array):
+def group_images_per_month(file_path_array, tile):
     monthly_img2013H = [[]] * 12
     monthly_img2014H = [[]] * 12
     monthly_img2015H = [[]] * 12
@@ -69,11 +69,10 @@ def group_images_per_month(file_path_array):
     monthly_img2020G = [[]] * 12
     monthly_img2019H = [[]] * 12
     monthly_img2020H = [[]] * 12
-
-    for file in file_path_array:
-        year = utils.extract_sensing_year_from_filename(file)
-        month = utils.extract_sensing_month_from_filename(file)
-        if "21LYH" in file:
+    if tile == "21LYH":
+        for file in file_path_array:
+            year = utils.extract_sensing_year_from_filename(file)
+            month = utils.extract_sensing_month_from_filename(file)
             if year == 2013:
                 if not monthly_img2013H[month - 1]:
                     monthly_img2013H[month - 1] = [file]
@@ -114,7 +113,15 @@ def group_images_per_month(file_path_array):
                     monthly_img2020H[month - 1] = [file]
                 else:
                     monthly_img2020H[month - 1].append(file)
-        if "21LYG" in file:
+        monthly_img2013H = [x for x in monthly_img2013H if x != []]
+        monthly_img2020H = [x for x in monthly_img2020H if x != []]
+        return [monthly_img2013H, monthly_img2014H, monthly_img2015H,
+                monthly_img2016H, monthly_img2017H, monthly_img2018H,
+                monthly_img2019H, monthly_img2020H]
+    if tile == "21LYG":
+        for file in file_path_array:
+            year = utils.extract_sensing_year_from_filename(file)
+            month = utils.extract_sensing_month_from_filename(file)
             if year == 2013:
                 if not monthly_img2013G[month - 1]:
                     monthly_img2013G[month - 1] = [file]
@@ -155,11 +162,11 @@ def group_images_per_month(file_path_array):
                     monthly_img2020G[month - 1] = [file]
                 else:
                     monthly_img2020G[month - 1].append(file)
-    monthly_img2013G = [x for x in monthly_img2013G if x != []]
-    monthly_img2013H = [x for x in monthly_img2013H if x != []]
-    return [monthly_img2013G, monthly_img2013H, monthly_img2014G, monthly_img2014H, monthly_img2015G, monthly_img2015H,
-            monthly_img2016G, monthly_img2016H, monthly_img2017G, monthly_img2017H, monthly_img2018G, monthly_img2018H,
-            monthly_img2019G, monthly_img2019H, monthly_img2020G, monthly_img2020H]
+        monthly_img2013G = [x for x in monthly_img2013G if x != []]
+        monthly_img2020G = [x for x in monthly_img2020G if x != []]
+        return [monthly_img2013G, monthly_img2014G, monthly_img2015G,
+                monthly_img2016G, monthly_img2017G, monthly_img2018G,
+                monthly_img2019G, monthly_img2020G]
 
 
 def create_cloud_ranking(imgArray):

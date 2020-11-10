@@ -37,15 +37,21 @@ def extract_sensing_date_from_filename(filename):
     return datetime.datetime(year, month, day)
 
 def extract_sensing_month_from_filename(filename):
+    if not filename:
+        return
     month = filename[-11:-9]
     return int(month)
 
 
 def extract_sensing_year_from_filename(filename):
+    if not filename:
+        return
     return int(filename[-8:-4])
 
 
 def extract_sensing_day_from_filename(filename):
+    if not filename:
+        return
     return int(filename[-14:-12])
 
 def save_ind_img(path, array_img, name, tile, overwrite, metadata):
@@ -111,7 +117,6 @@ def extract_cloud_coverage(file_path):
         return 100
     fileindex = file_path.find("v1.4/")
     metadata_file_path = file_path[:fileindex+4]+".h5"
-    print(metadata_file_path)
     metadata = gdal.Info(metadata_file_path)
     cc_index = metadata.find("cloud_coverage")
     if cc_index != -1:

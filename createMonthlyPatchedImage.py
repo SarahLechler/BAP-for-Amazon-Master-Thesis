@@ -26,7 +26,7 @@ def get_images_of_month(month, year, directoryPath, tile):
                         year_path = os.path.join(tilePath, year_folder)
                         for hlsDirectory in os.listdir(year_path):
                             dirPath = os.path.join(year_path, hlsDirectory)
-                            if os.path.isdir(dirPath): #and "S30" in dirPath
+                            if os.path.isdir(dirPath):  # and "S30" in dirPath
                                 for file in os.listdir(dirPath):
                                     if file.endswith('.h5'):
                                         filePath = os.path.join(dirPath, file)
@@ -49,6 +49,21 @@ def list_index(index, monthly_images):
     return index_list
 
 
+def calcSensorPixel(bap_min, monthly_images):
+    sensor_array = []
+    for img in monthly_images:
+        if "S30" in img:
+            s30_array = np.full((bap_min.shape), 10)  # 10 = S30
+            sensor_array.append(s30_array)
+        if "L30" in img:
+            l30_array = np.full((bap_min.shape), 20)  # 20=L30
+            sensor_array.append(l30_array)
+    sensor_bpa = np.choose(bap_min, sensor_array)
+    occurrencesS30 = np.count_nonzero(sensor_bpa == 10)
+    occurrencesL30 = np.count_nonzero(sensor_bpa == 20)
+    return [occurrencesS30, occurrencesL30]
+
+
 def main(month, year, foldername, tile, indices, overwrite):
     monthly_images = get_images_of_month(month, year, foldername, tile)
     if monthly_images == []:
@@ -65,6 +80,7 @@ def main(month, year, foldername, tile, indices, overwrite):
     bap_array = np.array(bap_stack)
     if bap_array.size == 0:
         return
+    bap_array = np.where(np.isnan(bap_array), 300, bap_array)
     bpa_pixel = np.argmin(bap_array, axis=0)
     day = utils.extract_sensing_day(gdal.Info(qa_layer_path))
     for index in indices:
@@ -72,8 +88,10 @@ def main(month, year, foldername, tile, indices, overwrite):
             return
         index_array = np.array(list_index(index, monthly_images))
         index_bpa = np.choose(bpa_pixel, index_array)
-        utils.save_ind_img(monthly_images[0][:-35], index_bpa, index + "_BAP_", tile, True, gdal.Info(qa_layer_path))
-        print(f"BAP calculated for {month} {year} for {index}")
+        #utils.save_ind_img(monthly_images[0][:-35], index_bpa, index + "_BAP_", tile, True, gdal.Info(qa_layer_path))
+        sensor_occurence = calcSensorPixel(bpa_pixel, monthly_images)
+        print(
+            f"BAP calculated for {month} {year} for {index}. It was calculated based on {len(monthly_images)}  images.{sensor_occurence[0]} pixels are from Sentinel images, {sensor_occurence[1]} are from Landsat")
     monthly_images = None
     bap_stack = None
     bap_array = None

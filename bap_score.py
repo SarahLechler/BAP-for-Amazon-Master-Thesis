@@ -11,6 +11,7 @@ import os
 import datetime
 import numpy as np
 import utils
+import pandas as pd
 
 
 # get aerosol quality
@@ -64,7 +65,7 @@ def covered_by_cloud(pixel):
                    100, 112, 116, 128, 132, 144, 148, 160, 164, 176, 180, 192, 196,
                    208, 212, 224, 228, 240, 244]
     if not int(pixel) in cloudfree_pixel:
-        return 255
+        return 260
     else:
         return 0
 
@@ -83,18 +84,22 @@ def main(path, qa_path, target_date):
     distance_target_date = get_distance_to_target_date(path, target_date)
     sensor_score = get_sensor_score(path)
     img = gdal.Open(qa_path)
-    img_array = np.array(img.ReadAsArray())
-    bap_array = np.empty(img_array.shape)
-    for index, pixel in np.ndenumerate(img_array):
-        if pixel == None or pixel == np.nan or pixel == 0:
-            bap_array[index] = 260
-        else:
-            bap_score = get_bap_score(pixel, qa_path, distance_target_date, sensor_score)
-            bap_array[index] = bap_score
-    distance_target_date=None
-    img=None
-    img_array = None
-    return bap_array
+    if img is not None:
+        img_array = np.array(img.ReadAsArray())
+        bap_array = np.empty(img_array.shape)
+        for index, pixel in np.ndenumerate(img_array):
+            if pixel == None or pixel == np.nan or pixel == 0:
+                bap_array[index] = 260
+            else:
+                bap_score = get_bap_score(pixel, qa_path, distance_target_date, sensor_score)
+                if bap_score:
+                    bap_array[index] = bap_score
+        distance_target_date=None
+        img=None
+        img_array = None
+        return bap_array
+    else:
+        return
 
 
 if __name__ == "__main__":

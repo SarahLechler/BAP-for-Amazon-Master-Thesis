@@ -15,10 +15,7 @@ def applyCloudMask(ndvi, index_array):
 def mask_out_clouds(dataset_array, path):
     cloud_mask = gdal.Open(path[:-3] + "/cloud_mask.tif")
     cloud_mask_array = cloud_mask.ReadAsArray()
-    invert_cloud_mask_array = np.zeros_like(cloud_mask_array)
-    invert_cloud_mask_array[cloud_mask_array == 0] = 1
-    invert_cloud_mask_array[cloud_mask_array == 1] = 0
-    clear_sky_array = dataset_array * invert_cloud_mask_array
+    clear_sky_array = np.where(cloud_mask_array == 1, dataset_array, -9999)
     return clear_sky_array
 
 
@@ -87,8 +84,9 @@ Range: 0 to 1
 def calculate_savi(nir, red):
     savi = (nir - red) / (nir + red + 0.5) * (1 + 0.5)
     savi = np.where(savi > 1, 1, savi)
-    savi = np.where((savi < 0) & (savi != -999), 0, savi)
+    savi = np.where((savi < -1) & (savi != -999), -1, savi)
     return savi
+
 
 # calculate tesseled cap wetness
 def calculate_TCwetness(blue, green, red, nir, swir1, swir2):
@@ -226,16 +224,22 @@ def calculate_indices_fromh5(path, tile):
     # calculate indices
     ndvi = calculate_ndvi(nir_band, red_band)
     evi = calculate_evi(nir_band, red_band, blue_band)
-    gemi = calculate_gemi(nir_band, red_band)
+    # gemi = calculate_gemi(nir_band, red_band)
     savi = calculate_savi(nir_band, red_band)
     ndmi = calculate_ndmi(nir_band, swir_band)
+
+    ndvi = mask_out_clouds(ndvi, path)
+    evi = mask_out_clouds(evi, path)
+    # gemi = calculate_gemi(nir_band, red_band)
+    savi = mask_out_clouds(savi, path)
+    ndmi = mask_out_clouds(ndmi, path)
 
     print(f'finished calculating indices for {path}')
     # save indices img
     metadata = gdal.Info(path)
     utils.save_ind_img(path[:-3], ndvi, "NDVI", tile, True, metadata)
     utils.save_ind_img(path[:-3], evi, "EVI", tile, True, metadata)
-    utils.save_ind_img(path[:-3], gemi, "GEMI", tile, True, metadata)
+    # utils.save_ind_img(path[:-3], gemi, "GEMI", tile, True, metadata)
     utils.save_ind_img(path[:-3], savi, "SAVI", tile, True, metadata)
     utils.save_ind_img(path[:-3], ndmi, "NDMI", tile, True, metadata)
 

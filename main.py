@@ -9,71 +9,72 @@ import multiprocessing as mp
 import os
 from functools import partial
 
-import gdal
-# hls download test
-# from bs4 import BeautifulSoup
-import collections
-import datetime
-import fnmatch
-import numpy as np
-import pandas as pd
-#import rasterio
-#import requests
-#from subprocess import Popen, PIPE
-# from tqdm import tqdm
-#import urllib
-#import warnings
-
 import hlsCloudMask
 import createGeoTiffFromHLS
 import createClearSkyImg
 import calculateIndices
 import ranking
 import create_time_series
-import utils
 import createMonthlyPatchedImage
-#import runBFAST
-import convertToHDF5
-#import RandomForest.runDecisionTree as rundt
-#import runKMeans as km
+import runBFAST
+# import convertToHDF5
+# import RandomForest.runDecisionTree as rundt
+import runKMeans as km
 import create_yearly_time_series as yts
-#import RandomForest.createInputData as cd
-#import RandomForest.runRandomForest as rf
+import createInputData as cd
+import runRandomForest as rf
 import createROIImage as roi
 
 
 def save_results_to_tif(bfast_array, method, name):
     if name.find('LYH') != -1:
-        template_file = '/data/sarah/pythonscripts/hls/Images/21LYH/2018/L30/HLS.L30.T21LYH.2018019.v1.4/d01_clear_sky.tif'
-        out_path = '/data/sarah/pythonscripts/hls/Images/21LYH/' + name + method + '_bfast_tif'
+        template_file = '/scratch/tmp/s_lech05/hls_data/21LYH/template_file_21LYH.tif'
+        out_path = '/scratch/tmp/s_lech05/hls_data/21LYH/' + name + method + '_bfast.tif'
         output = gdal_array.SaveArray(bfast_array, out_path, format="GTiff", prototype=template_file)
+        print("saved file to " + out_path)
+        out_path = None
         output = None
+        bfast_array = None
+        template_file = None
     else:
-        template_file = '/data/sarah/pythonscripts/hls/Images/21LYG/2016/L30/HLS.L30.T21LYG.2016110.v1.4/d01_clear_sky.tif'
-        out_path = '/data/sarah/pythonscripts/hls/Images/21LYG/' + name + method + '_bfast_tif'
+        template_file = '/scratch/tmp/s_lech05/hls_data/21LYG/template_file_21LYG.tif'
+        out_path = '/scratch/tmp/s_lech05/hls_data/21LYG/' + name + method + '_bfast.tif'
         output = gdal_array.SaveArray(bfast_array, out_path, format="GTiff", prototype=template_file)
+        print("saved file to " + out_path)
+        out_path = None
         output = None
+        bfast_array = None
+        template_file = None
 
 
-def runCalcsBFAST(calc_array):
+def runCalcsBFAST(calc_array, bap):
     name = calc_array[0]
     tile = calc_array[1]
     print(f"running BFAST calcs for index {name} and tile {tile}")
-    timeseries = create_time_series.create_time_series(name, tile)
+    timeseries = create_time_series.create_time_series(name, tile, bap)
     results = runBFAST.run_bfast(timeseries)
-    save_results_to_tif(results[0], "_breaks_2018", name + tile)
-    save_results_to_tif(results[1], "_mean_2018,", name + tile)
+    if bap:
+        save_results_to_tif(results[0], "_breaks_2019_BAP", name + tile)
+        save_results_to_tif(results[1], "_mean_2019_BAP", name + tile)
+    else:
+        save_results_to_tif(results[0], "_breaks_2019", name + tile)
+        save_results_to_tif(results[1], "_mean_2019", name + tile)
+    timeseries = None
     results = None
 
-def runCalcsRF(year, index, tile, path):
-    print("starting RF")
-    main_path = path
+def runCalcsRF(inputarray, indice, path):
+    tile = inputarray[0]
+    year = inputarray[1]
+    main_path = path + tile + '/'
     roi.createROIImage(main_path, str(year), tile)
-    #ts = yts.create_time_series(index, tile, year, True)
-    #data = cd.createData(ts, main_path, index, year)
-    #km.runkmeans(data, year, index, tile)
-    #rf.runRF(index, main_path, year, data[0], data[1], ts)
-    #rundt.runDT(data[0], data[1], index)
+    for index in indice:
+        print(f"starting RF fo {year} and {tile}")
+        ts = yts.create_time_series(index, tile, year, True, path)
+        data = cd.createData(ts, main_path, index, year)
+        km.runkmeans(data, year, index, tile)
+        rf.runRF(index, main_path, year, data[0], data[1], ts, tile)
+        #rundt.runDT(data[0], data[1], index)
+        ts = None
 
 def createAllImages(path):
     if "LYG" in path:
@@ -82,65 +83,87 @@ def createAllImages(path):
         tile = "21LYH"
     if not (os.path.isdir(path[:-3])):
         os.mkdir(path[:-3])
-    #createGeoTiffFromHLS.create_multiband_geotif(path)
-    #hlsCloudMask.create_cloudmask(path)
-    clear_sky_path = createClearSkyImg.create_clear_sky_image(path)
-    calculateIndices.calculate_indices(clear_sky_path, tile)
+    # createGeoTiffFromHLS.create_multiband_geotif(path)
+    hlsCloudMask.create_cloudmask(path)
+    # clear_sky_path = createClearSkyImg.create_clear_sky_image(path)
+    calculateIndices.calculate_indices_fromh5(path, tile)
     clear_sky_path = None
-    print(f"finsihed creating Images for {path}")
+    print(f"finished creating Images for {path}")
 
 
-def run_bap(year):
+def run_bap(tileAndYear):
+    tile = tileAndYear[0]
+    year = tileAndYear[1]
     months = [8, 9, 10, 11, 12, 1, 2, 3, 4, 5, 6, 7]
-    indices = ["SAVI", "EVI", "NDVI", "GEMI"]
-    tiles = ["21LYG", "21LYH"]
+    indices = ["NDMI", "SAVI", "EVI", "NDVI"]
     for month in months:
-        for tile in tiles:
-            createMonthlyPatchedImage.main(month, year, "../../../../scratch/tmp/s_lech05/hls_data", tile, indices, False)
+        createMonthlyPatchedImage.main(month, year, "/scratch/tmp/s_lech05/hls_data/", tile, indices,
+                                       True)
     months = None
     indices = None
     tiles = None
 
 
 if __name__ == '__main__':
-    """
     img_paths = ranking.create_list_of_fileshdf5()
+
     # STEP 1: create images and cloudmask, mask out cloud and calculate indices in parallel
     print("starting Image Pool")
-    pool = mp.Pool(4)
+    pool = mp.Pool()
     result = pool.map(createAllImages, img_paths)
     pool.close()
     pool.join()
-    """
-    # STEP 2: Run BAP method for given years and indices
-    years = [2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020] #[2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020]
-    pool = mp.Pool(4)
-    result = pool.map(run_bap, years)
-    pool.close()
-    pool.join()
-
-     # STEP 3: run BFAST algorithm in parallel
-    """print("starting bfast Pool")
-    img_array = [["EVI", "21LYH"], ["EVI", "21LYG"],
-                 ["SAVI", "21LYH"], ["SAVI", "21LYG"]]
-    [["GEMI", "21LYH"],
-                 ["GEMI", "21LYG"], ["EVI", "21LYH"], ["EVI", "21LYG"], ["NDVI", "21LYH"], ["NDVI", "21LYG"],
-                 ["SAVI", "21LYH"], ["SAVI", "21LYG"]]
-    pool = mp.Pool(2)
-    result = pool.imap(runCalcsBFAST, img_array)
-
-    pool.close()
-    pool.join()
     
-     # STEP 4: run RF algorithm in parallel
-    indices = ["NDVI", "SAVI", "GEMI", "EVI"]
+    # STEP 2: Run BAP method for given years and indices
+    tilesAndYears = [["21LYG", 2013], ["21LYG", 2014], ["21LYG", 2015], ["21LYG", 2016], ["21LYG", 2017], ["21LYG", 2018],
+                  ["21LYG", 2019], ["21LYG", 2020], ["21LYH", 2013], ["21LYH", 2014], ["21LYH", 2015], ["21LYH", 2016],
+                  ["21LYH", 2017], ["21LYH", 2018], ["21LYH", 2019], ["21LYH", 2020]]
+    #years = [2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020]
+    pool = mp.Pool()
+    result = pool.map(run_bap, tilesAndYears)
+    pool.close()
+    pool.join()
+
+    # STEP 3: run BFAST algorithm in parallel
+    # runCalcsBFAST(["NDVI", "21LYG"], True)
+
+    print("starting bfast Pool for BAP images")
+    img_array = [["SAVI", "21LYH"], ["EVI", "21LYH"], ["SAVI", "21LYG"], ["NDVI", "21LYG"],
+                 ["EVI", "21LYG"], ["NDVI", "21LYH"], ["NDMI", "21LYG"], ["NDMI", "21LYH"]]
+    pool = mp.Pool()
+    result = pool.imap(partial(runCalcsBFAST, bap=True), img_array)
+
+    pool.close()
+    pool.join()
+    result = None
+
+    print("starting bfast Pool for monthly_images")
+    img_array = [["SAVI", "21LYH"], ["EVI", "21LYH"], ["SAVI", "21LYG"], ["NDVI", "21LYG"],
+                 ["EVI", "21LYG"], ["NDVI", "21LYH"], ["NDMI", "21LYG"], ["NDMI", "21LYH"]]
+    pool = mp.Pool()
+    result = pool.imap(partial(runCalcsBFAST, bap=False), img_array)
+
+    pool.close()
+    pool.join()
+    result = None
+    # for combi in img_array:
+    #   runCalcsBFAST(combi, True)
+    # STEP 4: run RF algorithm in parallel
+    tilesAndYears = [["21LYG", 2014], ["21LYG", 2015], ["21LYG", 2016], ["21LYG", 2017],
+                        ["21LYG", 2018],
+                        ["21LYG", 2019], ["21LYH", 2014], ["21LYH", 2015],
+                        ["21LYH", 2016],
+                        ["21LYH", 2017], ["21LYH", 2018], ["21LYH", 2019]]
+
+
+    indices = ["NDVI", "SAVI", "NDMI", "EVI"]
     tiles = ['21LYH', '21LYG']
-    years = [2018, 2017, 2016, 2015, 2014]
-    inputs = [indices, tiles, years]
+    # years = [2019, 2018, 2017, 2016]
+    # inputs = [indices, tiles, years]
     pool = mp.Pool()
 
-    result = pool.map(partial(runCalcsRF, index="NDVI", tile="21LYH", path="../../../../scratch/tmp/s_lech05/hls_data/21LYH/"), years)
+    result = pool.map(partial(runCalcsRF, indice=indices, path="hls_dataset/BAPs/"),
+                      tilesAndYears)  # " hls_dataset/BAPs/
 
     pool.close()
     pool.join()
-    """

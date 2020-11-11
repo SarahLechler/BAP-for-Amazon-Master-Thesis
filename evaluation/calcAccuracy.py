@@ -14,13 +14,16 @@ import pandas as pd
 import sys
 
 
-def create_prodes_layer(path, tile):
-    """    prodes_path = "prodes_data/21LYH_prodes.shp"
-    shp_driver = ogr.GetDriverByName("ESRI Shapefile")
-    prodes_data = shp_driver.Open(prodes_path, 0)
-    layer = prodes_data.GetLayer()
-    prodes_md = layer.GetLayerDefn()
-    # prodes_data = None"""
+def create_prodes_layer(path, prodes_path_shp, tile):
+    '''
+    creates Raster Prodes Layer
+    Input:
+    path: String path to template file
+    prodes_path_shp: String path to prodes shapefile
+    tile: String name of tile
+    Output:
+    prodes:Array with prodes data
+    '''
 
     # First we will open our raster image, to understand how we will want to rasterize our vector
     ds_path = f"{path}/template_file_{tile}.tif"
@@ -29,7 +32,7 @@ def create_prodes_layer(path, tile):
     # Fetch projection and extent
     proj = raster_ds.GetProjectionRef()
     ext = raster_ds.GetGeoTransform()
-    prodes_path = f'validationData/{tile}_prodes2019.shp'
+    prodes_path = prodes_path_shp
     shp_driver = ogr.GetDriverByName("ESRI Shapefile")
     source_ds = shp_driver.Open(prodes_path, 0)
     layer = source_ds.GetLayer()
@@ -38,8 +41,8 @@ def create_prodes_layer(path, tile):
     # 2) Creating the destination raster data source
 
     target_ds = gdal.GetDriverByName('GTiff').Create(
-        f'validationData/{tile}_prodes.tif', 3660, 3660, 1,
-        gdal.GDT_Float32)  ##COMMENT 2
+        prodes_path_shp[-3]+'tif', 3660, 3660, 1,
+        gdal.GDT_Float32)  ##COMMENT 2 f'validationData/{tile}_prodes.tif'
 
     target_ds.SetGeoTransform(ext)  # COMMENT 3
     target_ds.SetProjection(proj)
@@ -59,11 +62,11 @@ def create_prodes_layer(path, tile):
     else:
         print("Success")
 
-    prodes_ds = gdal.Open(f'validationData/{tile}_prodes.tif', gdal.GA_ReadOnly)
+    prodes_ds = gdal.Open(prodes_path_shp[-3]+'tif', gdal.GA_ReadOnly) #f'validationData/{tile}_prodes.tif'
     prodes = prodes_ds.GetRasterBand(1).ReadAsArray()
     prodes = np.where(prodes != -9999, 1, 255).astype(np.float).ravel()
     print(f"amount of deforestation pixel in prodes: {np.unique(prodes, return_counts='true')}")
-    return prodes
+    return prodes #prodes:Array with prodes data
 
 
 def extract_extent(index):
@@ -87,6 +90,15 @@ def extract_extent(index):
 
 
 def get_bfastlayer(tile, index, bap):
+    '''
+    fetches BFast layer as array
+    Input:
+    tile: String Name of tile
+    index: String Name of index
+    bap: Boolean if fetches for BAP images
+    Output:
+    bfast_md:metadata of bfast layer and bfast_array:Array with bfast breaks
+    '''
     if bap:
         bfast_path = f"../Ergebnisse_BFAST/{index}{tile}_breaks_2019_BAP_bfast.tif"
     else:
@@ -122,10 +134,19 @@ def get_bfastlayer(tile, index, bap):
     outDs.SetProjection(dataset.GetProjection())
     bfast_array = bfast_array.ravel()
 
-    return bfast_md, bfast_array
+    return bfast_md, bfast_array # metadata of bfast layer and Array with bfast breaks
 
 
 def get_RFlayer(tile, index, bap):
+    '''
+    fetches Random Forest layer as array
+    Input:
+    tile: String Name of tile
+    index: String Name of index
+    bap: Boolean if fetches for BAP images
+    Output:
+    rf_md:metadata of rf layer and rf_array:Array with rf classification
+    '''
     if bap:
         rf_path = f"../ErgebnisseRF/{tile}/classified_{index}2019.gtif"
     else:
@@ -162,10 +183,17 @@ def get_RFlayer(tile, index, bap):
     outDs.SetProjection(dataset.GetProjection())
 
     rf_array = rf_array.ravel()
-    return rf_md, rf_array
+    return rf_md, rf_array # rf_md:metadata of rf layer and rf_array:Array with rf classification
 
 
 def calc_accuracy_bfast(input):
+    '''
+    runs statistical calculations for the BFAST layer
+    Input:
+    input: Array[] with index, prodes_layer_aray, tilename, bap
+    Output:
+    prints calculated statistics
+    '''
     bfast_layer = get_bfastlayer(input[2], input[0], input[3])[1]
     score = accuracy_score(input[1], bfast_layer)
     p_score = precision_score(input[1], bfast_layer, average=None)
@@ -194,6 +222,13 @@ def calc_accuracy_bfast(input):
 
 
 def calc_accuracy_rf(input):
+    '''
+    runs statistical calculations for the RF layer
+    Input:
+    input: Array[] with index, prodes_layer_aray, tilename, bap
+    Output:
+    prints calculated statistics
+    '''
     rf_layer = get_RFlayer(input[2], input[0], input[3])[1]
     score = accuracy_score(input[1], rf_layer)
     p_score = precision_score(input[1], rf_layer, average=None)
@@ -222,6 +257,14 @@ def calc_accuracy_rf(input):
 
 
 def compare(prodes, classification):
+    '''
+    runs manual accuracy calulations for classification layer
+    Input:
+    prodes: Array[] prodes_layer array
+    classification: Array[] classification_layer array
+    Output:
+    returns calulated accuracy
+    '''
     print("start comparing")
     totalPix = len(prodes)
     rightClassDeforest = 0
@@ -239,10 +282,14 @@ def compare(prodes, classification):
 
 
 if __name__ == "__main__":
+    '''
+    runs statistrical calculations for the BFAST layer and the Random Forest Layer
+    '''
     tile = "21LYH"
     path = f"../hls_dataset/BAPs/{tile}/"
+    prodes_path = f'validationData/{tile}_prodes2019.shp'
     bap = False
-    prodes_layer = create_prodes_layer(path, tile)
+    prodes_layer = create_prodes_layer(path, tile, prodes_path)
     index_array = [["NDVI", prodes_layer, tile, bap], ["NDMI", prodes_layer, tile, bap],
                    ["SAVI", prodes_layer, tile, bap],
                    ["EVI", prodes_layer, tile, bap]]

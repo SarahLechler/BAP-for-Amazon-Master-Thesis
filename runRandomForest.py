@@ -7,25 +7,30 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.ensemble import RandomForestClassifier
 
-"""
-cluster algorithm:
-kmeans(?)
-SOM
-decision tree and export the model to file (svg/png) --> how is it splitting the data
-"""
-
-
-def runRF(index, path, year, X, y, ts, tile):
+def runRF(index, path, year, X, y, ts, tile, bap):
+    '''
+    Runs RF algorithm
+    Input:
+    index: String Name of index for which RF runs
+    path: String Folder to save the result
+    year: Int year for which RF runs
+    X:sample data (pixel values)
+    y:corresponding labels of pixel
+    ts: timeseries (3D index array)
+    bap: Boolean, BAP timeseries?
+    Output:
+    saves classification result to .tif file
+    '''
     # Tell GDAL to throw Python exceptions, and register all drivers
     gdal.UseExceptions()
     gdal.AllRegister()
     img = np.asarray(ts)
 
     print('Creating classifier')
-    # Initialize our model with 500 trees
+    # Initialize model with 500 trees
     rf = RandomForestClassifier(n_estimators=500, oob_score=True)
 
-    # Fit our model to training data
+    # Fit model to training data
     rf = rf.fit(X, y)
 
     print('Our OOB prediction of for index {ind} accuracy is: {oob}%'.format(oob=rf.oob_score_ * 100, ind=index))
@@ -45,10 +50,13 @@ def runRF(index, path, year, X, y, ts, tile):
     #Labels: 1 - Forest; 2- Pasture; 3 - Agriculture 4- Deforestation
     class_prediction = class_prediction.reshape(img.shape[0], img.shape[1])
     # first_img = class_prediction[:, :, 0]
-    """    out_path = path + 'classified_Months' + index + str(year) + '.gtif'
+    if bap:
+        out_path = path + 'classified_BAP' + index + str(year) + '.gtif'
+    else:
+        out_path = path + 'classified_Months' + index + str(year) + '.gtif'
     prediction_file = gdal_array.SaveArray(class_prediction, out_path, format="GTiff",
                                            prototype=path + "template_file_" + tile + '.tif')
-    print(f"classified TS saved to {out_path}")"""
+    print(f"classified TS saved to {out_path}")
     prediction_file = None
     """  class_prediction = class_prediction.reshape(img[:, :, 0].shape)
     for image, i in range(class_prediction[3]):

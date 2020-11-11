@@ -42,6 +42,16 @@ def plotSampleData(X, year, index, y, path):
 
 
 def createData(ts, path, index, year):
+    '''
+    Creates input Data for RF
+    Input:
+    ts: Array[] timeseries (3D array of index images)
+    path: String path to folde
+    index: String Index name
+    year: Int Year for which to create data
+    Output:
+    X:sample data (pixel values)  y:labels of pixel
+    '''
     # Read in our image and ROI image
     img_ds = ts
     roi_ds = gdal.Open(path + 'training_data_roi' + str(year) + '.tif', gdal.GA_ReadOnly)
@@ -57,14 +67,14 @@ def createData(ts, path, index, year):
     print('The training data include {n} classes: {classes}'.format(n=labels.size,
                                                                     classes=labels))
     print(f"The roi has a shape of {roi.shape} and the ts {img.shape}")
-    # We will need a "X" matrix containing our features, and a "y" array containing our labels
+    # "X" matrix containing our features, "y" array containing our labels
     #     These will have n_samples rows
-    #     In other languages we would need to allocate these and them loop to fill them, but NumPy can be faster
 
     X = img[roi > 0, :]  # .T  # map labels to coresponding pixels
     y = roi[roi > 0]
 
     plotSampleData(X, year, index, y, path)
-    X = np.where(np.isnan(X), -999, X)
+    X = np.where(np.isnan(X), -9999, X)
 
-    return X, y
+    return X, y #    X:sample data (pixel values)  y:labels of pixel
+

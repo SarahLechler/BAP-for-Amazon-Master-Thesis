@@ -5,16 +5,16 @@ from osgeo import ogr
 import gdal
 import numpy as np
 
-"""
-creates polygons from training data point layer
-inout:  index name String (NDVI, RNSDI, SAVI, GEMI EVI)
-        path String path to training data
-        year: year of training data
-
-"""
-
-
 def createROIImage(path, year, tile):
+    '''
+    creates ROI image based on training data
+    Input:
+    path: String Folder where template file is and roi should be saved
+    year: Int year for which to create roi
+    tile: String tile for which to create roi
+    Output:
+    saves roi .tif to specified folder
+    '''
     print(f"creating ROI images for {year} for the tile {tile}")
     ds_path = f"{path}/template_file_{tile}.tif"
     print(ds_path)

@@ -1,40 +1,12 @@
-from osgeo import gdal
 import os
 import utils
 
-directoryPath = "/scratch/tmp/s_lech05/hls_data/"
-
-
-def create_list_of_files():
-    filePathArray = []
-    for item in os.listdir(directoryPath):
-        tilePath = os.path.join(directoryPath, item)
-        if os.path.isdir(tilePath) and (item == "21LYG" or item == "21LYH"):
-            for year in os.listdir(tilePath):
-                # if year == "2016" or year == "2017" or year == "2018":
-                yearPath = os.path.join(tilePath, year)
-                if os.path.isdir(yearPath):
-                    for hlsDirectory in os.listdir(yearPath):
-                        dirPath = os.path.join(yearPath, hlsDirectory)
-                        if os.path.isdir(dirPath):
-                            for file in os.listdir(dirPath):
-                                if file.endswith('.hdf'):
-                                    filePath = os.path.join(dirPath, file)
-                                    filePathArray.append(filePath)
-        elif os.path.isdir(tilePath) and (item == "2019"):
-            yearPath = tilePath
-            if os.path.isdir(yearPath):
-                for hlsDirectory in os.listdir(yearPath):
-                    dirPath = os.path.join(yearPath, hlsDirectory)
-                    if os.path.isdir(dirPath):
-                        for file in os.listdir(dirPath):
-                            if file.endswith('.hdf'):
-                                filePath = os.path.join(dirPath, file)
-                                filePathArray.append(filePath)
-    return filePathArray
-
-
-def create_list_of_fileshdf5():
+def create_list_of_fileshdf5(directoryPath):
+    '''
+    Creates a list of all hdf5 files
+    Input:
+    directoryPath: String path to directory where .h5 files are stored
+    '''
     filePathArray = []
     for item in os.listdir(directoryPath):
         tilePath = os.path.join(directoryPath, item)
@@ -53,6 +25,12 @@ def create_list_of_fileshdf5():
 
 
 def group_images_per_month(file_path_array, tile):
+    '''
+    Groups images per month
+    Input:
+    file_path_array: Array[] with file pahts
+    tile: String Tile Name
+    '''
     monthly_img2013H = [[]] * 12
     monthly_img2014H = [[]] * 12
     monthly_img2015H = [[]] * 12

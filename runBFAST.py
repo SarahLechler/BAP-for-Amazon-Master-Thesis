@@ -8,30 +8,35 @@ from bfast.utils import crop_data_dates
 import matplotlib.pyplot as plt
 import matplotlib
 import pandas as pd
-import bfastSingle
 
 
 def run_bfast(indice_array):
+    '''
+    Runs BFAST algorithm
+    Input:
+    indice_array: Array[] sorted 3D array with image arrays for the whole period
+    Output:
+    Breaks and mean of timeseries
+    '''
     print("starting Bfast Process")
-    # parameters
+    # set parameters
     k = 3
     freq = 30
     trend = True
     hfrac = 0.25
     level = 0.05
-    start_hist = datetime(2013, 8, 1)
-    start_monitor = datetime(2019, 7, 1)
-    end_monitor = datetime(2020, 7, 31)
+    start_hist = datetime(2013, 8, 1)  # set start of history period
+    start_monitor = datetime(2019, 7, 1)  # set start of monitoring perios
+    end_monitor = datetime(2020, 7, 31)  # set end of monitoring period
 
-    dates = pd.date_range('2013-08-01', '2020-07-31', freq='MS')
+    dates = pd.date_range('2013-08-01', '2020-07-31', freq='MS')  # create data array
     dates2 = [pd.to_datetime(date) for date in dates]
     nancount = numpy.count_nonzero(numpy.isnan(indice_array))
     print(f"Timeseries has {nancount} NANs")
-    indice_array = numpy.where(numpy.isnan(indice_array), -9999, indice_array)
+    indice_array = numpy.where(numpy.isnan(indice_array), -9999, indice_array)  # supstitute noData values
     indice_array = indice_array * 10000
     indice_array = indice_array.astype(int)
-    data, dates = crop_data_dates(indice_array, dates2, start_hist, end_monitor)
-    print(indice_array.shape)
+    data, dates = crop_data_dates(indice_array, dates2, start_hist, end_monitor)  # crop array
 
     while len(dates2) > data.shape[0]:
         dates2.pop()
@@ -43,6 +48,7 @@ def run_bfast(indice_array):
     print("Shape of data array: {}".format(data.shape))
     print(f'Number of dates {len(dates2)}')
 
+    # create BFAST model
     model = BFASTMonitor(
         start_monitor,
         freq=freq,
@@ -54,14 +60,14 @@ def run_bfast(indice_array):
         verbose=1
     )
     # data = data[:, 2330:3000, :]
-    model.fit(data, dates, n_chunks=5, nan_value=-9999)
+    model.fit(data, dates, n_chunks=5, nan_value=-9999)  # fit model to timeseries
     # bfastSingle.fit_single(data, dates2, model)
 
-    # visualize results
+    # save results
     breaks = model.breaks
     means = model.means
 
-    return breaks, means
+    return breaks, means  # return detected breaks in timeseries and mean values of pixel
 
 
 """

@@ -1,7 +1,7 @@
 """
-This code aims to pre-process hls-datasets (specifically the tiles 21LYH anf 21LYG from 2013-2017)
- and to run bfast with the prerocessed images to detect deforestation
- The images are stored in a folder called Images/*tile*/*year*/*(S30|L30)*
+This code aims to pre-process hls-datasets (specifically the tiles 21LYH anf 21LYG from 2013-2020),
+to create Best-Available-Pixel composites and to run BFAST and Random Forest with the preprocessed images to detect deforestation
+ The images are stored in a folder called /scratch/tmp/s_lech05/hls_data/*tile*/*name*method*
 """
 
 from osgeo import gdal_array
@@ -25,8 +25,14 @@ import createInputData as cd
 import runRandomForest as rf
 import createROIImage as roi
 
-
 def save_results_to_tif(bfast_array, method, name):
+    '''
+    Saves BFAST results to a .tif file
+    Input:
+    bfast_array: Array [] with BFAST classifications
+    method: String "" If Monhtly Images or BAP Images were used and breaks or mean
+    name: String "" Name of the Index and tile
+    '''
     if name.find('LYH') != -1:
         template_file = '/scratch/tmp/s_lech05/hls_data/21LYH/template_file_21LYH.tif'
         out_path = '/scratch/tmp/s_lech05/hls_data/21LYH/' + name + method + '_bfast.tif'
@@ -47,12 +53,19 @@ def save_results_to_tif(bfast_array, method, name):
         template_file = None
 
 
+
 def runCalcsBFAST(calc_array, bap):
+    '''
+    Runs BFAST calculations
+    Input:
+    calc_array: Array[] with the name of the index and the tile
+    bap: Boolean If Monhtly Images or BAP Images should be used
+    '''
     name = calc_array[0]
     tile = calc_array[1]
     print(f"running BFAST calcs for index {name} and tile {tile}")
-    timeseries = create_time_series.create_time_series(name, tile, bap)
-    results = runBFAST.run_bfast(timeseries)
+    timeseries = create_time_series.create_time_series(name, tile, bap) #create timeseries for entire period
+    results = runBFAST.run_bfast(timeseries) #run bfast with created timeseries and save it to results
     if bap:
         save_results_to_tif(results[0], "_breaks_2019_BAP", name + tile)
         save_results_to_tif(results[1], "_mean_2019_BAP", name + tile)
@@ -63,49 +76,69 @@ def runCalcsBFAST(calc_array, bap):
     results = None
 
 def runCalcsRF(inputarray, indice, path):
+    '''
+    Runs Random Forest calculations
+    Input:
+    inputarray: Array[] with the year and the tile
+    indice: Array[] with indices names
+    path: path to where the data is stored
+    '''
     tile = inputarray[0]
     year = inputarray[1]
     main_path = path + tile + '/'
-    roi.createROIImage(main_path, str(year), tile)
+    roi.createROIImage(main_path, str(year), tile) #create reference image with training data
     for index in indice:
         print(f"starting RF fo {year} and {tile}")
-        ts = yts.create_time_series(index, tile, year, True, path)
-        data = cd.createData(ts, main_path, index, year)
+        ts = yts.create_time_series(index, tile, year, True, path) #create timeseries for specific year
+        data = cd.createData(ts, main_path, index, year) #create training data with timeseries and roi image
         km.runkmeans(data, year, index, tile)
-        rf.runRF(index, main_path, year, data[0], data[1], ts, tile)
+        rf.runRF(index, main_path, year, data[0], data[1], ts, tile, True) #run random forest
         #rundt.runDT(data[0], data[1], index)
         ts = None
 
 def createAllImages(path):
+    '''
+    Creates all Images
+    Input:
+    path: path to hdf file
+    '''
     if "LYG" in path:
         tile = "21LYG"
     if "LYH" in path:
         tile = "21LYH"
     if not (os.path.isdir(path[:-3])):
         os.mkdir(path[:-3])
-    # createGeoTiffFromHLS.create_multiband_geotif(path)
-    hlsCloudMask.create_cloudmask(path)
-    # clear_sky_path = createClearSkyImg.create_clear_sky_image(path)
-    calculateIndices.calculate_indices_fromh5(path, tile)
+    # createGeoTiffFromHLS.create_multiband_geotif(path) #creates tifs for each band
+    hlsCloudMask.create_cloudmask(path) #creates cloud mask for image from QA layer
+    # clear_sky_path = createClearSkyImg.create_clear_sky_image(path) # masks out clouds for each band
+    calculateIndices.calculate_indices_fromh5(path, tile) # calculates indices for image
     clear_sky_path = None
     print(f"finished creating Images for {path}")
 
 
 def run_bap(tileAndYear):
+    '''
+    Creates all Images
+    Input:
+    tileAndYear: Array[] with tile and year
+    '''
     tile = tileAndYear[0]
     year = tileAndYear[1]
     months = [8, 9, 10, 11, 12, 1, 2, 3, 4, 5, 6, 7]
     indices = ["NDMI", "SAVI", "EVI", "NDVI"]
     for month in months:
         createMonthlyPatchedImage.main(month, year, "/scratch/tmp/s_lech05/hls_data/", tile, indices,
-                                       True)
+                                       True) #creates composites afte calculating score for each image
     months = None
     indices = None
     tiles = None
 
 
 if __name__ == '__main__':
-    img_paths = ranking.create_list_of_fileshdf5()
+    '''
+    Runs all calculations
+    '''
+    img_paths = ranking.create_list_of_fileshdf5("/scratch/tmp/s_lech05/hls_data/") #create list of all available images
 
     # STEP 1: create images and cloudmask, mask out cloud and calculate indices in parallel
     print("starting Image Pool")

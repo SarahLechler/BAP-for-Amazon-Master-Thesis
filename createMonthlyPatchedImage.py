@@ -1,11 +1,3 @@
-"""TODO:
-Get "main image from the image with the highest score the
-closest to the 15. of each month
-
-Get next images that are timely shifted and evaluate pixel
-that are missing in main image --> do this recursive until
-image is fully filled or images are farther away than 10 days
-"""
 import os
 import gdal
 import numpy as np
@@ -16,6 +8,16 @@ import utils
 
 
 def get_images_of_month(month, year, directoryPath, tile):
+    '''
+    Gets all images for a given month and a given year
+    Input:
+    month: Integer, month to get images for
+    year: Integer, year to get images for
+    directoryPath: String, path to directory where images are stored
+    tile: String, tilename to get images for
+    Output:
+    Array[] with images for given month and year and tile
+    '''
     monthly_images = []
     for item in os.listdir(directoryPath):
         tilePath = os.path.join(directoryPath, item)
@@ -40,6 +42,14 @@ def get_images_of_month(month, year, directoryPath, tile):
 
 
 def list_index(index, monthly_images):
+    '''
+    Create list of index images
+    Input:
+    index: String, name of index
+    monthly_images: Array[] of all images for which to get the index values
+    Output:
+    Array with index array for the month
+    '''
     index_list = []
     for image in monthly_images:
         for file in os.listdir(image[:-3]):
@@ -50,6 +60,15 @@ def list_index(index, monthly_images):
 
 
 def calcSensorPixel(bap_min, monthly_images):
+    '''
+    Calculates occurence of pixel for each sensor
+    Input:
+    bap_min: Array[] with the position of the bap
+    monthly_images: Array[] of monthly images
+    Output:
+    occurencesS30: number of pixels that are from Sentinel
+    occurence L30: number of pixels that are from Landsat
+    '''
     sensor_array = []
     for img in monthly_images:
         if "S30" in img:
@@ -65,6 +84,17 @@ def calcSensorPixel(bap_min, monthly_images):
 
 
 def main(month, year, foldername, tile, indices, overwrite):
+    '''
+    Creates composites based on the best available pixel
+    Input:
+    month: Integer, month to get images for
+    year: Integer, year to get images for
+    foldername: String, path to directory where images are stored
+    tile: String, tilename to get images forOutput:
+    indices: Array[], names inf indices
+    overwrite: Boolean, whether to overwrite images or not
+    Breaks and mean of time series
+    '''
     monthly_images = get_images_of_month(month, year, foldername, tile)
     if monthly_images == []:
         print(f"No images exist  for {month} in {year} for tile {tile}")

@@ -41,7 +41,7 @@ def get_sensor_score(path):
     if "S30" in path:
         return 0
     if "L30" in path:
-        return 10
+        return 1
 
 
 # getDate and distance to target date from qa_layer path
@@ -75,7 +75,7 @@ def get_bap_score(pixel, path, distance_to_target_date, sensor_score):
     distance_to_cloud = get_distance_to_cloud(pixel)
     aerosol_quality = get_aerosol_quality(pixel)
     # print(f"cloud distance:{distance_to_cloud}, aerosol: {aerosol_quality}, date:{distance_to_target_date} cloud: {cloud_covered}")
-    bap = distance_to_cloud + aerosol_quality + distance_to_target_date + cloud_covered + sensor_score
+    bap = 5*distance_to_cloud + aerosol_quality + distance_to_target_date + 260*cloud_covered + 10*sensor_score
     return bap
 
 

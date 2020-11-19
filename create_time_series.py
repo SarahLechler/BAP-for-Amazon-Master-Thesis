@@ -8,6 +8,15 @@ import ranking
 
 
 def get_indice_img_paths(indice_name, tile_name, directoryPath):
+    """
+   gets the image pahts for the given index and tile with the images stored in the directoryPath
+    input:
+    indice_name: String, name of index
+    tile_name: String, name of tile
+    directoryPath: String path to directory where images are stored
+    output:
+    list[] ofS Strings to Best-Monthly images
+    """
     filePathArray = []
     for item in os.listdir(directoryPath):
         tilePath = os.path.join(directoryPath, item)
@@ -25,13 +34,13 @@ def get_indice_img_paths(indice_name, tile_name, directoryPath):
                                         if indice_name in file and ".xml" not in file and "classified" not in file and "training_data" not in file:
                                             filePath = os.path.join(indices_dir_path, file)
                                             month = utils.extract_sensing_month_from_filename(filePath)
-                                            if (month < 7 and year == 2020) or year != 2020 or (
-                                                    month > 7 and year == 2013):
+                                            if (month > 8 and year == 2020) or (month < 7 and year == 2013):
+                                                continue
+                                            else:
                                                 filePathArray.append(filePath)
     index_images = ranking.group_images_per_month(filePathArray, tile_name)
     monthly_images = []
     for images in index_images:
-        print(images)
         for months in images:
             ranking_results = ranking.create_cloud_ranking(months)
             monthly_images.append(ranking_results)
@@ -39,6 +48,13 @@ def get_indice_img_paths(indice_name, tile_name, directoryPath):
 
 
 def get_pixel_value_array(img_array):
+    """
+    creates numpy 3D array with array for each item in the timeseries
+    input:
+    img_array: Array[] with paths to images
+    output:
+    Array[] representing 3D image times seires (data cube)
+    """
     first_data = gdal.Open(img_array[0])
     time_series_array = first_data.ReadAsArray()
     for img_path in img_array[1:]:
@@ -54,6 +70,13 @@ def save_time_series(time_series, path):
 
 
 def sortImgPahts(paths):
+    """
+    sort image paths in temporal order
+    input:
+    paths: list[] paths to images
+    output:
+    Array[] of sorted image paths
+    """
     dates = []
     for img in paths:
         dates.append(utils.extract_sensing_date_from_filename(img))
@@ -76,6 +99,15 @@ input:  index name String (NDVI, RNSDI, SAVI, GEMI EVI)
 
 
 def get_indice_bap_img_paths(index, tile, directoryPath):
+    """
+    gets the BAP image paths for the given index and tile with the images stored in the directoryPath
+    input:
+    index: String, name of index
+    tile: String, name of tile
+    directoryPath: String, path to directory where images are stored
+    output:
+    list[] ofS Strings to Best-Monthly images
+    """
     bap_images = []
     # make single for loops
     for item in os.listdir(directoryPath):
@@ -97,6 +129,15 @@ def get_indice_bap_img_paths(index, tile, directoryPath):
 
 
 def create_time_series(name, tile, bap):
+    """
+    creates time series for given index, tile and either bap or not
+    input:
+    name: String, name of index
+    tile: String, name of tile
+    bap: Boolean, for BAP images or not
+    output:
+    list[] ofS Strings to Best-Monthly images
+    """
     print("start calculating TS")
     if bap:
         paths = get_indice_bap_img_paths(name, tile, "/scratch/tmp/s_lech05/hls_data/") #"../../../../scratch/tmp/s_lech05/hls_data/"
@@ -105,7 +146,5 @@ def create_time_series(name, tile, bap):
     sortedImgPaths = sortImgPahts(paths)
     time_series = get_pixel_value_array(sortedImgPaths)
     print(f"Finish creating time_series for tile {tile} and index {name}")
-    nancount = np.count_nonzero(np.isnan(time_series))
-    print(f"It has {nancount} NAN values")
     sortedImgPaths = None
     return time_series
